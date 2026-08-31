@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, TIMESTAMP
-from app.database import Base
+from app.db_models.base import Base   # <-- FIXED
 
 class MLLog(Base):
     __tablename__ = "ml_logs"

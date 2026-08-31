@@ -6,6 +6,7 @@ class CustomerBase(BaseModel):
     name: str
     email: EmailStr
     organization: Optional[str] = None
+    phone: Optional[str] = None   # <-- ADDED
 
 
 class CustomerCreate(CustomerBase):
@@ -16,6 +17,7 @@ class CustomerUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
     organization: Optional[str] = None
+    phone: Optional[str] = None   # <-- ADDED
 
 
 class CustomerResponse(CustomerBase):

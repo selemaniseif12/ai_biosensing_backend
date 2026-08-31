@@ -1,58 +1,134 @@
-import os
-import joblib
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
+import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score, mean_absolute_error
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+import joblib
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_DIR, "ML_Model_Analyzer_v6_Table_With_Required_Count.csv")
-MODELS_DIR = os.path.join(BASE_DIR, "models")
-os.makedirs(MODELS_DIR, exist_ok=True)
+# -----------------------------
+# Load original dataset
+# -----------------------------
+orig_df = pd.read_csv("app/models/data/virus_multiclass.csv")
+print("Original CSV rows:", len(orig_df))
 
-def load_data():
-    df = pd.read_csv(DATA_PATH)
+# -----------------------------
+# Jitter helper
+# -----------------------------
+def jitter(value, pct):
+    return value * (1 + np.random.uniform(-pct, pct))
 
-    df["device_id"] = df["device_id"].str.replace("Device-", "").str.replace("Device‑", "")
-    df["device_id"] = df["device_id"].astype(int)
+# -----------------------------
+# Augment: 20 samples per original row
+# -----------------------------
+rows = []
 
-    feature_cols = [
-        "ID",
-        "device_id",
-        "deposition_rate",
-        "temperature",
-        "humidity",
-        "flow_rate",
-        "mass_of_virus_fg",
-        "required_virus_count"
-    ]
+for _, row in orig_df.iterrows():
+    virus_id = int(row["virus_id"])
+    virus_name = str(row["virus_name"])
+    antibody = str(row["antibody"])
+    antigen = str(row["antigen"])
 
-    X = df[feature_cols]
-    y = df["time_to_detection"]
-    return X, y
+    mass_fg = float(row["mass_fg"])
+    deposition_rate_s = float(row["deposition_rate_s"])
+    temperature_c = float(row["temperature_c"])
+    humidity_pct = float(row["humidity_pct"])
+    flow_rate = float(row["flow_rate"])
+    time_to_detection_s = float(row["time_to_detection_s"])
+    frequency_mhz = float(row["frequency_mhz"])
 
-def train_random_forest():
-    X, y = load_data()
+    for _ in range(20):
+        rows.append({
+            "virus_id": virus_id,
+            "virus_name": virus_name,
+            "antibody": antibody,
+            "antigen": antigen,
+            "mass_fg": jitter(mass_fg, 0.10),
+            "deposition_rate_s": jitter(deposition_rate_s, 0.05),
+            "temperature_c": jitter(temperature_c, 0.02),
+            "humidity_pct": jitter(humidity_pct, 0.05),
+            "flow_rate": jitter(flow_rate, 0.10),
+            "time_to_detection_s": jitter(time_to_detection_s, 0.10),
+            "frequency_mhz": frequency_mhz,
+        })
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+df = pd.DataFrame(rows)
+print("Augmented dataset size:", len(df))
 
-    model = RandomForestRegressor(
-        n_estimators=400,
-        max_depth=None,
-        random_state=42,
-        n_jobs=-1,
-    )
-    model.fit(X_train, y_train)
+# -----------------------------
+# Clean categorical columns
+# -----------------------------
+def clean_text_column(col):
+    df[col] = df[col].astype(str)
+    df[col] = df[col].str.replace(r"[^\x00-\x7F]+", "", regex=True)
+    df[col] = df[col].str.strip()
+    df[col] = df[col].astype("category").cat.codes
 
-    y_pred = model.predict(X_test)
-    print("RF R²:", r2_score(y_test, y_pred))
-    print("RF MAE:", mean_absolute_error(y_test, y_pred))
+clean_text_column("antibody")
+clean_text_column("antigen")
+clean_text_column("virus_name")
 
-    model_path = os.path.join(MODELS_DIR, "rf_time_to_detection.pkl")
-    joblib.dump(model, model_path)
-    print("Saved:", model_path)
+df["virus_id"] = pd.to_numeric(df["virus_id"], errors="coerce").fillna(-1).astype(int)
 
-if __name__ == "__main__":
-    train_random_forest()
+# -----------------------------
+# Features
+# -----------------------------
+features = [
+    "mass_fg",
+    "frequency_mhz",
+    "deposition_rate_s",
+    "temperature_c",
+    "humidity_pct",
+    "flow_rate",
+    "time_to_detection_s",
+    "antibody",
+    "antigen",
+    "virus_name",
+]
+
+X = df[features]
+y = df["virus_id"]
+
+if len(X) == 0:
+    raise ValueError("Dataset is empty after processing.")
+
+# -----------------------------
+# Scale
+# -----------------------------
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# -----------------------------
+# Train/test split (stratified)
+# -----------------------------
+X_train, X_test, y_train, y_test = train_test_split(
+    X_scaled, y, test_size=0.2, stratify=y, random_state=42
+)
+
+# -----------------------------
+# RandomForest
+# -----------------------------
+model = RandomForestClassifier(
+    n_estimators=600,
+    max_depth=None,
+    class_weight="balanced",
+    n_jobs=-1,
+    random_state=42,
+)
+
+model.fit(X_train, y_train)
+
+# -----------------------------
+# Evaluate
+# -----------------------------
+pred = model.predict(X_test)
+acc = accuracy_score(y_test, pred)
+print("Accuracy:", acc)
+
+# -----------------------------
+# Save
+# -----------------------------
+joblib.dump(model, "app/models/virus_multiclassify_V7_175.pkl")
+joblib.dump(scaler, "app/models/virus_multiclassify_V7_175_scaler.pkl")
+
+print("Model saved: Virus Multi-classify V7-175")

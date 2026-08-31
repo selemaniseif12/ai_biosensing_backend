@@ -1,27 +1,49 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database.session import SessionLocal, get_db
 
-from app.schemas.sample import SampleCreate, SampleOut
-from app.crud import samples as crud_samples
+from app.dependencies.db import get_db
+
+from app.schemas.samples import SampleCreate, SampleUpdate
+from app.services.sample_service import (
+    create_sample,
+    get_sample,
+    get_all_samples,
+    update_sample,
+    delete_sample,
+)
 
 router = APIRouter(tags=["Samples"])
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
-@router.get("/", response_model=list[SampleOut])
-def list_samples(db: Session = Depends(get_db)):
-    return crud_samples.get_samples(db)
+@router.post("/")
+def create(sample: SampleCreate, db: Session = Depends(get_db)):
+    return create_sample(sample, db)
 
-@router.post("/", response_model=SampleOut)
-def create_sample(sample: SampleCreate, db: Session = Depends(get_db)):
-    return crud_samples.create_sample(db, sample)
 
-@router.get("/{sample_id}", response_model=SampleOut)
-def get_sample(sample_id: int, db: Session = Depends(get_db)):
-    return crud_samples.get_sample(db, sample_id)
+@router.get("/{sample_id}")
+def read(sample_id: int, db: Session = Depends(get_db)):
+    sample = get_sample(sample_id, db)
+    if not sample:
+        raise HTTPException(status_code=404, detail="Sample not found")
+    return sample
+
+
+@router.get("/")
+def read_all(db: Session = Depends(get_db)):
+    return get_all_samples(db)
+
+
+@router.put("/{sample_id}")
+def update(sample_id: int, sample: SampleUpdate, db: Session = Depends(get_db)):
+    updated = update_sample(sample_id, sample, db)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Sample not found")
+    return updated
+
+
+@router.delete("/{sample_id}")
+def delete(sample_id: int, db: Session = Depends(get_db)):
+    deleted = delete_sample(sample_id, db)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Sample not found")
+    return {"deleted": True}

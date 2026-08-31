@@ -1,25 +1,24 @@
+# app/database.py
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # ---------------------------------------------------------
-# SQLAlchemy Base
+# PostgreSQL connection (your existing configuration)
 # ---------------------------------------------------------
-Base = declarative_base()
+DATABASE_URL = "postgresql://postgres:Magazijuto74@localhost:5432/ai_biosensing"
 
 # ---------------------------------------------------------
-# Database URL (SQLite)
-# NOTE:
-# - This creates a permanent SQLite file named app.db
-# - Located in the project root
-# - Works with all existing models
+# SQLAlchemy Engine
 # ---------------------------------------------------------
-SQLALCHEMY_DATABASE_URL = "sqlite:///./app.db"
-
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},  # Required for SQLite
+    DATABASE_URL,
+    pool_pre_ping=True
 )
 
+# ---------------------------------------------------------
+# Session Factory
+# ---------------------------------------------------------
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
@@ -27,7 +26,12 @@ SessionLocal = sessionmaker(
 )
 
 # ---------------------------------------------------------
-# FastAPI Dependency
+# Shared Base used by ALL models
+# ---------------------------------------------------------
+Base = declarative_base()
+
+# ---------------------------------------------------------
+# Dependency for FastAPI routes
 # ---------------------------------------------------------
 def get_db():
     db = SessionLocal()
@@ -37,13 +41,21 @@ def get_db():
         db.close()
 
 # ---------------------------------------------------------
-# Import all models so SQLAlchemy registers them
+# IMPORTANT: Create all tables on startup
 # ---------------------------------------------------------
-import app.models.user
-import app.models.customer
-import app.models.measurement
-import app.models.dataset
-import app.models.detection
-import app.models.ml_log
-import app.models.usage_log
-import app.models.api_key
+def init_db():
+    """
+    Ensures all SQLAlchemy models create their tables in PostgreSQL.
+    This includes your existing models AND the new receipt model.
+    """
+
+    # Existing models
+    from app.models.consulting_model import ConsultingRequestModel
+    from app.models.token_model import ServiceToken
+    from app.models.service_model import Service
+
+    # NEW: Receipt model
+    from app.models.receipt import Receipt
+
+    # Create all tables
+    Base.metadata.create_all(bind=engine)

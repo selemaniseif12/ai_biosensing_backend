@@ -1,24 +1,59 @@
-# app/services/measurement_service.py
+from sqlalchemy.orm import Session
+from app.db_models.models import Measurement, Analyzer1Device
 
-from uuid import uuid4
-from app.models.measurement import Measurement
 
-measurements_db = {}
+def create_measurement(data, db: Session):
+    device = db.query(Analyzer1Device).filter(
+        Analyzer1Device.device_id == data.device_id
+    ).first()
 
-def create_measurement(data):
-    measurement_id = str(uuid4())
-    measurement = Measurement(id=measurement_id, **data.dict())
-    measurements_db[measurement_id] = measurement
+    if not device:
+        return None
+
+    measurement = Measurement(
+        sample_id=data.sample_id,
+        device_id=data.device_id,
+        frequency_mhz=data.frequency_mhz,
+        delta_f_mhz=data.delta_f_mhz,
+        m_g=data.m_g,
+    )
+
+    db.add(measurement)
+    db.commit()
+    db.refresh(measurement)
     return measurement
 
-def list_measurements():
-    return list(measurements_db.values())
 
-def get_measurement(measurement_id: str):
-    return measurements_db.get(measurement_id)
+def get_measurement(measurement_id: int, db: Session):
+    return db.query(Measurement).filter(Measurement.id == measurement_id).first()
 
-def get_measurements_for_sample(sample_id: str):
-    return [
-        m for m in measurements_db.values()
-        if m.sample_id == sample_id
-    ]
+
+def get_all_measurements(db: Session):
+    return db.query(Measurement).all()
+
+
+def update_measurement(measurement_id: int, data, db: Session):
+    measurement = get_measurement(measurement_id, db)
+    if not measurement:
+        return None
+
+    if data.frequency_mhz is not None:
+        measurement.frequency_mhz = data.frequency_mhz
+    if data.delta_f_mhz is not None:
+        measurement.delta_f_mhz = data.delta_f_mhz
+    if data.m_g is not None:
+        measurement.m_g = data.m_g
+
+    db.commit()
+    db.refresh(measurement)
+    return measurement
+
+
+def delete_measurement(measurement_id: int, db: Session):
+    measurement = get_measurement(measurement_id, db)
+    if not measurement:
+        return None
+
+    db.delete(measurement)
+    db.commit()
+    return True

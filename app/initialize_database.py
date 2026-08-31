@@ -1,7 +1,9 @@
 import csv
 import os
 from sqlalchemy import text
-from app.database import engine
+from app.db_core import engine, SessionLocal
+from app.db_models.models import Virus
+
 
 # ---------------------------------------------------------
 # Paths
@@ -12,10 +14,15 @@ DATA_DIR = os.path.join(BASE_DIR, "data", "analyzer_v1")
 DEVICES_CSV = os.path.join(DATA_DIR, "analyzer_v1_devices.csv")
 OUTPUTS_CSV = os.path.join(DATA_DIR, "analyzer_v1_outputs.csv")
 
+
 # ---------------------------------------------------------
-# Initialize Database (Create Tables + Load CSV Data)
+# Initialize Database (Create Tables + Load CSV Data + Seed Virus Table)
 # ---------------------------------------------------------
 def initialize_database():
+
+    # -----------------------------------------------------
+    # 1. CREATE RAW TABLES + LOAD CSVs (your original logic)
+    # -----------------------------------------------------
     with engine.begin() as conn:
 
         # Create devices table
@@ -80,3 +87,20 @@ def initialize_database():
                     })
 
     print("Analyzer v1 database initialized successfully.")
+
+    # -----------------------------------------------------
+    # 2. SEED VIRUS TABLE (SQLAlchemy ORM)
+    # -----------------------------------------------------
+    db = SessionLocal()
+
+    if db.query(Virus).count() == 0:
+        viruses = [
+            Virus(id=1, name="SARS-CoV-2", mass_fg=0.02, sensitivity_fg=1.23),
+            Virus(id=2, name="Influenza", mass_fg=0.05, sensitivity_fg=1.23),
+            Virus(id=3, name="RSV", mass_fg=0.03, sensitivity_fg=1.23)
+        ]
+        db.add_all(viruses)
+        db.commit()
+        print("Virus table seeded successfully.")
+
+    db.close()

@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, TIMESTAMP
-from app.database import Base
+from app.database import Base # <-- FIXED
 
 class UsageLog(Base):
     __tablename__ = "usage_logs"

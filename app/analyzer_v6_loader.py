@@ -1,8 +1,9 @@
 # app/analyzer_v6_loader.py
 
-from app.models.analyzer_v6_model import analyzer_v6
-from app.models_v6_logs import AnalyzerV6Log
-from app.database import SessionLocal
+from app.ml.analyzer_v6_model import analyzer_v6
+from app.db_models.database import SessionLocal
+from app.db_models.models import AnalyzerV6Log   # <-- FIXED IMPORT
+
 
 def log_v6_prediction(payload: dict, prediction: float):
     db = SessionLocal()

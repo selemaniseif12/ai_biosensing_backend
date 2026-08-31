@@ -1,12 +1,21 @@
-from app.ml.model_loader import load_rf, load_xgboost
+from app.ml.model_loader import load_rf
 
-def classify(features):
-    rf = load_rf()
-    xgb = load_xgboost()
+EXPECTED_FEATURES = 8  # your model expects 8 inputs
 
-    rf_pred = rf.predict([features])[0]
-    xgb_pred = xgb.predict([features])[0]
+def classify(features, version: str | None = None):
+    print("DEBUG: classify() called with features:", features)
 
-    avg = (rf_pred + xgb_pred) / 2.0
+    # Validate input length
+    if len(features) != EXPECTED_FEATURES:
+        raise ValueError(
+            f"Model expects {EXPECTED_FEATURES} features, but received {len(features)}"
+        )
 
-    return "Positive" if avg > 0.5 else "Negative"
+    rf = load_rf(version=version)
+    if rf is None:
+        raise ValueError("RF model failed to load")
+
+    pred = rf.predict([features])
+    print("DEBUG: Prediction result:", pred)
+
+    return "Positive" if pred[0] > 0.5 else "Negative"

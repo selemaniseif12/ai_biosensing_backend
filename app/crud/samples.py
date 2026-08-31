@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
-from app.db_models.sample import Sample
-from app.schemas.sample import SampleCreate
+from app.schemas.samples import SampleCreate
+
+from app.models.sample import Sample  # ⭐ THIS WAS MISSING
 
 def get_samples(db: Session):
     return db.query(Sample).all()
@@ -10,8 +11,9 @@ def get_sample(db: Session, sample_id: int):
 
 def create_sample(db: Session, sample: SampleCreate):
     db_sample = Sample(
-        name=sample.name,
-        description=sample.description
+        sample_name=sample.sample_name,
+        description=sample.description,
+        customer_id=sample.customer_id
     )
     db.add(db_sample)
     db.commit()

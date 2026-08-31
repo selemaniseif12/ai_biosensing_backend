@@ -1,6 +1,5 @@
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship
-from app.db_models.base import Base
+from app.database import Base
 
 class Customer(Base):
     __tablename__ = "customers"
@@ -11,5 +10,5 @@ class Customer(Base):
     organization = Column(String(255))
     phone = Column(String(50))
 
-    # Relationship to API keys
-    api_keys = relationship("APIKey", back_populates="customer")
+    # Removed APIKey relationship because APIKey model does not exist
+    # This fixes the SQLAlchemy InvalidRequestError during startup

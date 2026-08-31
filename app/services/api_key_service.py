@@ -2,7 +2,8 @@ import secrets
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from app.models.customers import Customer
+# ⭐ FIXED — correct model import
+from app.models.customer import Customer
 
 
 class APIKeyObject:
@@ -56,3 +57,16 @@ def validate_api_key(db: Session, api_key: str) -> Customer:
     db.commit()
 
     return customer
+
+
+# ============================================================
+# ⭐ NEW — FUNCTION REQUIRED BY auth.py
+# ============================================================
+
+def validate_api_key_in_db(db: Session, api_key: str) -> bool:
+    """
+    Lightweight validator used by /auth/validate-key.
+    Returns True/False instead of raising exceptions.
+    """
+    customer = db.query(Customer).filter(Customer.api_key == api_key).first()
+    return customer is not None

@@ -5,7 +5,8 @@ from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SECRET_KEY = "your-secret-key"
+# ⭐ FIXED: Use your real secret key here
+SECRET_KEY = "564cc7b73913e7206a15fd72385738d779e04957686233143ffe68b22c77b5c7"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
@@ -15,6 +16,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def get_password_hash(password: str) -> str:
+    print("PASSWORD TYPE:", type(password), "VALUE:", password)
     return pwd_context.hash(password)
 
 

@@ -1,0 +1,12 @@
+{
+    "version": "Virus Multi-classify V7-175",
+    "accuracy": 0.9545454545454546,
+    "base_frequency_hz": 1693999.6834565601,
+    "sensor_feature": "sensor_frequency_offset",
+    "parameters": {
+        "n_estimators": 800,
+        "max_depth": null,
+        "min_samples_split": 2,
+        "max_features": "sqrt"
+    }
+}

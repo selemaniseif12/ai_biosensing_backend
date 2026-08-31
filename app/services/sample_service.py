@@ -1,30 +1,44 @@
-from app.models.sample import Sample
-from app.schemas.sample_schema import SampleCreate, SampleResponse
-from typing import List
-from uuid import uuid4
-
-# Temporary in-memory storage
-samples_db: List[Sample] = []
+from sqlalchemy.orm import Session
+from app.db_models.models import Sample
 
 
-def create_sample(data: SampleCreate) -> SampleResponse:
+def create_sample(sample_data, db: Session):
     sample = Sample(
-        id=str(uuid4()),
-        customer_id=data.customer_id,
-        sample_type=data.sample_type,
-        description=data.description,
-        created_at=data.created_at
+        customer_id=sample_data.customer_id,
+        description=sample_data.description,
     )
-    samples_db.append(sample)
-    return SampleResponse(**sample.dict())
+    db.add(sample)
+    db.commit()
+    db.refresh(sample)
+    return sample
 
 
-def list_samples() -> List[SampleResponse]:
-    return [SampleResponse(**s.dict()) for s in samples_db]
+def get_sample(sample_id: int, db: Session):
+    return db.query(Sample).filter(Sample.id == sample_id).first()
 
 
-def get_sample(sample_id: str) -> SampleResponse | None:
-    for s in samples_db:
-        if s.id == sample_id:
-            return SampleResponse(**s.dict())
-    return None
+def get_all_samples(db: Session):
+    return db.query(Sample).all()
+
+
+def update_sample(sample_id: int, sample_data, db: Session):
+    sample = db.query(Sample).filter(Sample.id == sample_id).first()
+    if not sample:
+        return None
+
+    sample.customer_id = sample_data.customer_id
+    sample.description = sample_data.description
+
+    db.commit()
+    db.refresh(sample)
+    return sample
+
+
+def delete_sample(sample_id: int, db: Session):
+    sample = db.query(Sample).filter(Sample.id == sample_id).first()
+    if not sample:
+        return None
+
+    db.delete(sample)
+    db.commit()
+    return {"deleted": True}

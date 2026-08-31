@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.database.session import get_db
+from app.database import get_db
+
 from app.crud.api_keys import (
     create_api_key,
     list_api_keys_for_customer,

@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import String
 
-from app.database.session import get_db
-from app.database.models import AnalysisLog
+from app.dependencies.db import get_db
+
+from app.db_models.analysis_log_model import AnalysisLog  # <-- FIXED
 
 router = APIRouter(
     prefix="/analytics",
@@ -12,9 +13,6 @@ router = APIRouter(
 
 @router.get("/logs")
 def get_all_logs(db: Session = Depends(get_db)):
-    """
-    Return all analysis logs for admin analytics dashboard.
-    """
     logs = (
         db.query(AnalysisLog)
         .order_by(AnalysisLog.created_at.desc())
@@ -25,9 +23,6 @@ def get_all_logs(db: Session = Depends(get_db)):
 
 @router.get("/logs/version/{version}")
 def get_logs_by_version(version: str, db: Session = Depends(get_db)):
-    """
-    Filter logs by analyzer version (e.g., v6).
-    """
     logs = (
         db.query(AnalysisLog)
         .filter(AnalysisLog.version == version)
@@ -39,9 +34,6 @@ def get_logs_by_version(version: str, db: Session = Depends(get_db)):
 
 @router.get("/logs/date/{date}")
 def get_logs_by_date(date: str, db: Session = Depends(get_db)):
-    """
-    Filter logs by date (YYYY-MM-DD).
-    """
     try:
         logs = (
             db.query(AnalysisLog)

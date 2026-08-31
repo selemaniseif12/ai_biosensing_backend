@@ -1,11 +1,10 @@
 from sqlalchemy import Column, String, Float, Integer
 from sqlalchemy.schema import Sequence
-from app.database import Base
+from app.db_models.base import Base   # <-- FIXED
 
 class AnalysisResult(Base):
     __tablename__ = "analysis_results"
 
-    # FIXED: PostgreSQL-safe auto-incrementing primary key
     id = Column(Integer, Sequence('analysis_results_id_seq'), primary_key=True, index=True)
 
     sample_id = Column(String, index=True)

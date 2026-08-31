@@ -1,87 +1,76 @@
-# app/routers/analyzer_v1.py
-
-import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
-from app.crud import analyzer_v1 as crud_analyzer
+from app.db_core import get_db
+from app.db_models.models import Analyzer1Device, Measurement
 
-router = APIRouter(tags=["Analyzer v1"])
-logger = logging.getLogger("analyzers")
+router = APIRouter(
+    prefix="/analyzer_v1",
+    tags=["Analyzer v1"]
+)
 
+# -----------------------------
+# QCM / Sauerbrey Calculations
+# -----------------------------
+def compute_delta_f(device: Analyzer1Device, measured_frequency: float):
+    return device.frequency_mhz - measured_frequency
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-@router.post("/", summary="Analyze V1")
-def analyze_v1(data: dict, db: Session = Depends(get_db)):
-    logger.info(f"[Analyzer v1] analyze_v1 called with data={data}")
-
-    try:
-        result = crud_analyzer.run_analysis(db, data)
-        logger.info(f"[Analyzer v1] Analysis completed: {result}")
-        return result
-    except Exception as e:
-        logger.error(f"[Analyzer v1] ERROR in analyze_v1: {str(e)}")
-        raise HTTPException(status_code=500, detail="Analyzer v1 failed")
+def compute_mass_change(device: Analyzer1Device, delta_f: float):
+    # Sauerbrey-like proportionality using stored m_g
+    # m_g is the mass sensitivity constant for the device
+    if device.frequency_mhz == 0:
+        return 0
+    return device.m_g * (delta_f / device.frequency_mhz)
 
 
-@router.get("/devices", summary="Get All Devices")
-def get_devices(db: Session = Depends(get_db)):
-    logger.info("[Analyzer v1] get_devices called")
+# -----------------------------
+# Analyzer Endpoint
+# -----------------------------
+@router.post("/measure")
+def analyze_and_save(
+    device_id: int,
+    measured_frequency_mhz: float,
+    sample_id: int = 1,
+    db: Session = Depends(get_db)
+):
+    # 1. Load device
+    device = db.query(Analyzer1Device).filter_by(device_id=device_id).first()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
 
-    try:
-        return crud_analyzer.get_devices(db)
-    except Exception as e:
-        logger.error(f"[Analyzer v1] ERROR in get_devices: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch devices")
+    # 2. Compute Δf
+    delta_f = compute_delta_f(device, measured_frequency_mhz)
 
+    # 3. Compute Δm (mass change)
+    delta_m = compute_mass_change(device, delta_f)
 
-@router.get("/devices/{device_id}", summary="Get Device")
-def get_device(device_id: int, db: Session = Depends(get_db)):
-    logger.info(f"[Analyzer v1] get_device called for device_id={device_id}")
+    # 4. Save measurement to database
+    measurement = Measurement(
+        sample_id=sample_id,
+        device_id=device_id,
+        frequency_mhz=measured_frequency_mhz,
+        delta_f_mhz=delta_f,
+        m_g=delta_m
+    )
 
-    try:
-        return crud_analyzer.get_device(db, device_id)
-    except Exception as e:
-        logger.error(f"[Analyzer v1] ERROR in get_device: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch device")
+    db.add(measurement)
+    db.commit()
+    db.refresh(measurement)
 
-
-@router.get("/outputs", summary="Get All Outputs")
-def get_outputs(db: Session = Depends(get_db)):
-    logger.info("[Analyzer v1] get_outputs called")
-
-    try:
-        return crud_analyzer.get_outputs(db)
-    except Exception as e:
-        logger.error(f"[Analyzer v1] ERROR in get_outputs: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch outputs")
-
-
-@router.get("/outputs/{device_id}", summary="Get Output")
-def get_output(device_id: int, db: Session = Depends(get_db)):
-    logger.info(f"[Analyzer v1] get_output called for device_id={device_id}")
-
-    try:
-        return crud_analyzer.get_output(db, device_id)
-    except Exception as e:
-        logger.error(f"[Analyzer v1] ERROR in get_output: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch output")
-
-
-@router.get("/device_full/{device_id}", summary="Get Full Device Data")
-def get_full_device(device_id: int, db: Session = Depends(get_db)):
-    logger.info(f"[Analyzer v1] get_full_device called for device_id={device_id}")
-
-    try:
-        return crud_analyzer.get_full_device(db, device_id)
-    except Exception as e:
-        logger.error(f"[Analyzer v1] ERROR in get_full_device: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch full device data")
+    # 5. Return full device + measurement data
+    return {
+        "device_id": device.device_id,
+        "sample_id": sample_id,
+        "measured_frequency_mhz": measured_frequency_mhz,
+        "device_frequency_mhz": device.frequency_mhz,
+        "delta_f_mhz": delta_f,
+        "delta_m_g": delta_m,
+        "device_parameters": {
+            "center_electrode_mm": device.center_electrode_mm,
+            "diameter_mm": device.diameter_mm,
+            "chromium_nm": device.chromium_nm,
+            "gold_nm": device.gold_nm,
+            "thickness_mm": device.thickness_mm,
+        },
+        "saved_measurement_id": measurement.id
+    }

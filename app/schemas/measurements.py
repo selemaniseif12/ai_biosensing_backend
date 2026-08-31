@@ -1,28 +1,40 @@
 from pydantic import BaseModel
-from datetime import datetime
 from typing import Optional
 
 
+# ---------------------------------------------------------
+# BASE SCHEMA
+# ---------------------------------------------------------
 class MeasurementBase(BaseModel):
-    customer_id: int
-    frequency: float
-    amplitude: float
-    phase: float
+    frequency_mhz: float
+    delta_f_mhz: Optional[float] = None
+    m_g: Optional[float] = None
 
 
+# ---------------------------------------------------------
+# CREATE SCHEMA (POST)
+# ---------------------------------------------------------
 class MeasurementCreate(MeasurementBase):
-    pass
+    sample_id: int
+    device_id: int
 
 
+# ---------------------------------------------------------
+# UPDATE SCHEMA (PATCH/PUT)
+# ---------------------------------------------------------
 class MeasurementUpdate(BaseModel):
-    frequency: Optional[float] = None
-    amplitude: Optional[float] = None
-    phase: Optional[float] = None
+    frequency_mhz: Optional[float] = None
+    delta_f_mhz: Optional[float] = None
+    m_g: Optional[float] = None
 
 
-class MeasurementOut(MeasurementBase):
+# ---------------------------------------------------------
+# RESPONSE SCHEMA
+# ---------------------------------------------------------
+class MeasurementDB(MeasurementBase):
     id: int
-    created_at: datetime
+    sample_id: int
+    device_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True

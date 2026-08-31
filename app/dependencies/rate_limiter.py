@@ -1,8 +1,9 @@
 import time
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from app.dependencies.database import get_db
-from app.models.api_key import APIKey
+
+from app.db_models.database import get_db        # <-- FIXED
+from app.models.api_key import APIKey            # <-- We will fix this next if needed
 
 # In-memory store: { "api_key": [timestamps...] }
 RATE_LIMIT_STORE = {}

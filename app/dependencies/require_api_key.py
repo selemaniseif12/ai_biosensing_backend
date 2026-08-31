@@ -1,7 +1,9 @@
 from fastapi import Header, HTTPException, Depends
 from sqlalchemy.orm import Session
-from app.database import get_db
+
+from app.db_models.database import get_db
 from app.services.api_key_service import validate_api_key
+
 
 def require_api_key(
     x_api_key: str = Header(...),

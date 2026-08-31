@@ -1,7 +1,7 @@
 from fastapi import Header, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 
-from app.dependencies.database import get_db
+from app.db_models.database import get_db   # <-- FIXED
 from app.crud.api_keys import (
     get_api_key_by_value,
     increment_usage
@@ -21,14 +21,12 @@ def require_api_key(
     - Usage counter increments
     """
 
-    # Missing header
     if not x_api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing X-API-Key header"
         )
 
-    # Lookup key
     api_key = get_api_key_by_value(db, x_api_key)
     if not api_key:
         raise HTTPException(
@@ -36,22 +34,18 @@ def require_api_key(
             detail="Invalid API key"
         )
 
-    # Check active status
     if not api_key.active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="API key is inactive or revoked"
         )
 
-    # Enforce monthly limit (0 = unlimited)
     if api_key.monthly_limit > 0 and api_key.total_calls >= api_key.monthly_limit:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="API key monthly usage limit exceeded"
         )
 
-    # Increment usage counter
     increment_usage(db, api_key)
 
-    # Return the key object for downstream use if needed
     return api_key

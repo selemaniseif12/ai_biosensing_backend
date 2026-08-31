@@ -1,15 +1,31 @@
-# app/schemas/measurement_schema.py
-
 from pydantic import BaseModel
-from datetime import datetime
+from typing import Optional
 
+
+# ---------------------------------------------------------
+# BASE SCHEMA
+# ---------------------------------------------------------
 class MeasurementBase(BaseModel):
-    sample_id: str
-    frequency_data: list[float]
-    timestamp: datetime
+    frequency_mhz: float
+    delta_f_mhz: Optional[float] = None
+    m_g: Optional[float] = None
 
+
+# ---------------------------------------------------------
+# CREATE SCHEMA (used for POST)
+# ---------------------------------------------------------
 class MeasurementCreate(MeasurementBase):
-    pass
+    sample_id: int
+    device_id: int
 
+
+# ---------------------------------------------------------
+# RESPONSE SCHEMA (returned to client)
+# ---------------------------------------------------------
 class MeasurementResponse(MeasurementBase):
-    id: str
+    id: int
+    sample_id: int
+    device_id: int
+
+    class Config:
+        from_attributes = True

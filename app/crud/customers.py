@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.customer import Customer
+
+
 from app.schemas.customer import CustomerCreate, CustomerUpdate
 
 
@@ -8,6 +10,7 @@ def create_customer(db: Session, customer_data: CustomerCreate):
         name=customer_data.name,
         email=customer_data.email,
         organization=customer_data.organization,
+        phone=customer_data.phone,
     )
     db.add(customer)
     db.commit()

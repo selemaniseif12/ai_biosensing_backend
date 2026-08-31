@@ -1,9 +1,9 @@
-# app/routers/usage.py
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.database.session import get_db
+# Correct import path
+from app.db.database import get_db
+
 from app.schemas.usage import UsageCreate
 from app.services.usage_service import (
     service_list_usage_logs,

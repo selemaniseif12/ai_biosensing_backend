@@ -3,13 +3,13 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from jose import jwt
 
+# ⭐ FIX: Use the correct subscription user model
 from app.models.user import User
-from app.schemas.auth import UserCreate, UserLogin, LoginRequest
 
-# Password hashing
+from app.schemas.auth import UserCreate, UserLogin
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# JWT settings
 SECRET_KEY = "YOUR_SECRET_KEY"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
@@ -27,7 +27,7 @@ def authenticate_user(db: Session, email: str, password: str):
     user = db.query(User).filter(User.email == email).first()
     if not user:
         return None
-    if not verify_password(password, user.hashed_password):
+    if not verify_password(password, user.password_hash):
         return None
     return user
 
@@ -45,7 +45,7 @@ def create_user(db: Session, user_data: UserCreate):
     hashed_pw = get_password_hash(user_data.password)
     db_user = User(
         email=user_data.email,
-        hashed_password=hashed_pw,
+        password_hash=hashed_pw,
     )
     db.add(db_user)
     db.commit()
@@ -54,14 +54,8 @@ def create_user(db: Session, user_data: UserCreate):
 
 
 def register_user(db: Session, user_data: UserCreate):
-    """
-    Wrapper for user registration.
-    """
     return create_user(db, user_data)
 
 
-# ---------------------------
-# The missing function
-# ---------------------------
 def get_user_by_id(db: Session, user_id: int):
     return db.query(User).filter(User.id == user_id).first()

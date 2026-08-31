@@ -1,18 +1,26 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+
 
 class CustomerBase(BaseModel):
     name: str
-    email: str | None = None
-    organization: str | None = None
-    phone: str | None = None
+    email: EmailStr
+    organization: Optional[str] = None
+    phone: Optional[str] = None
+
 
 class CustomerCreate(CustomerBase):
     pass
 
-class CustomerUpdate(CustomerBase):
-    pass
 
-class CustomerOut(CustomerBase):
+class CustomerUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    organization: Optional[str] = None
+    phone: Optional[str] = None
+
+
+class CustomerResponse(CustomerBase):
     id: int
 
     class Config:

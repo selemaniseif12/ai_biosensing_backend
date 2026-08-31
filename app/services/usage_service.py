@@ -12,12 +12,21 @@ def service_list_usage_logs(db: Session):
 
 # ---------------------------------------------------------
 # Create new usage log
+# Accepts both Pydantic model and raw dict (from ML/Virus/Compare APIs)
 # ---------------------------------------------------------
-def service_create_usage_log(db: Session, data: UsageCreate):
-    log = UsageLog(**data.dict())
+def service_create_usage_log(db: Session, data):
+    # If data is a Pydantic model, convert to dict
+    if isinstance(data, UsageCreate):
+        payload = data.dict()
+    else:
+        payload = data  # raw dict from API services
+
+    log = UsageLog(**payload)
+
     db.add(log)
     db.commit()
     db.refresh(log)
+
     return log
 
 

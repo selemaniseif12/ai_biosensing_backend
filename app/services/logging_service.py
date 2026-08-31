@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from app.database.models import AnalysisLog
+from app.db_models.models import AnalysisLog
+
 
 def log_analysis(db: Session, version: str, features: list, prediction: int, confidence: float):
     """
