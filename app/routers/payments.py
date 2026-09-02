@@ -10,21 +10,18 @@ from app.config import STRIPE_PRICE_IDS
 from app.utils.payment_verification import verify_payment
 from app.utils.token_generator import generate_token
 from app.database import get_db
-from app.models.token_model import TokenModel
-
-
+from app.models.token_model import TokenModel   # ⭐ FIXED IMPORT
 
 router = APIRouter(prefix="/payments", tags=["Checkout + Access"])
 
-# Load Stripe key from environment (no conflict with payments_router.py)
+# Load Stripe key from environment
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 if not STRIPE_SECRET_KEY:
     raise RuntimeError("STRIPE_SECRET_KEY is not set")
 stripe.api_key = STRIPE_SECRET_KEY
 
-
 # ---------------------------------------------------------
-# 1. Create Checkout Session (existing functionality)
+# 1. Create Checkout Session
 # ---------------------------------------------------------
 @router.post("/create-checkout-session")
 async def create_checkout_session(item_id: str):
@@ -45,7 +42,6 @@ async def create_checkout_session(item_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 # ---------------------------------------------------------
 # 2. Grant service access tokens after payment
 # ---------------------------------------------------------
@@ -54,24 +50,26 @@ class AccessRequest(BaseModel):
     item_id: str
     user_id: int | None = None
 
-
 @router.post("/grant-access")
 async def grant_access(payload: AccessRequest, db: Session = Depends(get_db)):
-    # Verify payment with Stripe
+    # Verify payment
     if not verify_payment(payload.payment_id):
         raise HTTPException(status_code=400, detail="Payment verification failed")
 
-    # Generate token for purchased item
+    # Generate token
     token_value = generate_token()
 
-    token_record = ServiceToken(
+    # ⭐ FIXED: Use TokenModel instead of ServiceToken
+    token_record = TokenModel(
         token=token_value,
-        service_name=payload.item_id,
+        token_type=payload.item_id,
         user_id=payload.user_id,
+        description=f"Access token for {payload.item_id}",
         is_active=True,
     )
 
     db.add(token_record)
     db.commit()
+    db.refresh(token_record)
 
     return {"success": True, "token": token_value}
