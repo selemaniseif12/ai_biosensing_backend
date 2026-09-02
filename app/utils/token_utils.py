@@ -3,7 +3,8 @@ from fastapi import HTTPException, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.token_model import ServiceToken
+from app.models.service_token_model import ServiceToken
+
 
 
 # ---------------------------------------------------------
