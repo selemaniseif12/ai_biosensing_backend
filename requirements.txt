@@ -13,3 +13,4 @@ python-dotenv
 stripe
 pydantic-settings
 python-jose
+passlib[bcrypt]
