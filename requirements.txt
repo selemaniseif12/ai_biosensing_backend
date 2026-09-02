@@ -10,3 +10,4 @@ sqlalchemy
 requests
 email-validator
 python-dotenv
+stripe
