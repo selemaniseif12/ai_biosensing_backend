@@ -11,3 +11,4 @@ requests
 email-validator
 python-dotenv
 stripe
+pydantic-settings
