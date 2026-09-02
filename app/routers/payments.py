@@ -10,7 +10,9 @@ from app.config import STRIPE_PRICE_IDS
 from app.utils.payment_verification import verify_payment
 from app.utils.token_generator import generate_token
 from app.database import get_db
-from app.models.token_model import ServiceToken
+from app.models.token_model import TokenModel
+
+
 
 router = APIRouter(prefix="/payments", tags=["Checkout + Access"])
 
