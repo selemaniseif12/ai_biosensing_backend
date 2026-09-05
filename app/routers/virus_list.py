@@ -12,8 +12,10 @@ router = APIRouter(
 ALLOWED_TOKEN_TYPES = ["virus_list", "v6", "admin"]
 
 def require_multi_token(token: str, db: Session = Depends(get_db)):
-    for service_name in ALLOWED_TOKEN_TYPES:
-        if is_token_active(db, token, service_name):
+
+    for token_type in ALLOWED_TOKEN_TYPES:
+        if is_token_active(db, token, token_type):
+
             return True
     raise HTTPException(status_code=403, detail="Invalid or inactive virus list token")
 

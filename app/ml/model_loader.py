@@ -1,47 +1,23 @@
 # app/ml/model_loader.py
 
-import joblib
 import os
+import pickle
+from pathlib import Path
+from dotenv import load_dotenv
 
-def load_model(model_path: str):
-    """
-    Loads a model from a given path with safety checks.
+load_dotenv()
 
-    Parameters:
-        model_path (str): Path to the .pkl model file
+CACHE_DIR = Path("model_cache")
+CACHE_DIR.mkdir(exist_ok=True)
 
-    Returns:
-        model: Loaded ML model
-    """
+def load_hf_model(filename: str):
+    local_path = CACHE_DIR / filename
+    if not local_path.exists():
+        raise RuntimeError(
+            f"Model file not found: {local_path}\n"
+            f"Download RAW .pkl from HuggingFace and place it in model_cache/"
+        )
+    with open(local_path, "rb") as f:
+        return pickle.load(f)
 
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Model file not found: {model_path}")
-
-    model = joblib.load(model_path)
-    return model
-
-
-def load_v2_model():
-    """
-    Loads the 100-virus V2 model.
-    Update the path if needed.
-    """
-    path = "app/ml/models/classify/v2/sim_model_v2_100.pkl"
-    return load_model(path)
-
-
-def load_v6_model():
-    """
-    Loads the 100-virus V6 model.
-    Update the path if needed.
-    """
-    path = "app/ml/models/classify/v6/sim_model_v6_100.pkl"
-    return load_model(path)
-
-
-def load_spectral_model():
-    """
-    Loads the spectral FFT model.
-    """
-    path = "app/ml/models/classify/spectral/spectral_model.pkl"
-    return load_model(path)
+virus_classifier = load_hf_model("sim_model_v2_100.pkl")

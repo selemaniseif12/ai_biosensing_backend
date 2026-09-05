@@ -1,19 +1,26 @@
-# app/database.py
-
+import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # ---------------------------------------------------------
-# PostgreSQL connection (your existing configuration)
+# Load environment variables
 # ---------------------------------------------------------
-DATABASE_URL = "postgresql://postgres:Magazijuto74@localhost:5432/ai_biosensing"
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL is not set. Add it in your .env file.")
 
 # ---------------------------------------------------------
-# SQLAlchemy Engine
+# SQLAlchemy Engine (Neon PostgreSQL)
 # ---------------------------------------------------------
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10
 )
 
 # ---------------------------------------------------------
@@ -26,12 +33,12 @@ SessionLocal = sessionmaker(
 )
 
 # ---------------------------------------------------------
-# Shared Base used by ALL models
+# Base Model
 # ---------------------------------------------------------
 Base = declarative_base()
 
 # ---------------------------------------------------------
-# Dependency for FastAPI routes
+# FastAPI Dependency
 # ---------------------------------------------------------
 def get_db():
     db = SessionLocal()
@@ -41,21 +48,18 @@ def get_db():
         db.close()
 
 # ---------------------------------------------------------
-# IMPORTANT: Create all tables on startup
+# Create all tables in Neon
 # ---------------------------------------------------------
 def init_db():
     """
-    Ensures all SQLAlchemy models create their tables in PostgreSQL.
-    This includes your existing models AND the new receipt model.
+    Ensures all SQLAlchemy models create their tables in Neon PostgreSQL.
     """
 
-    # Existing models
+    # Import ALL models so SQLAlchemy knows them
+    from app.models.token_model import TokenModel
     from app.models.consulting_model import ConsultingRequestModel
-    from app.models.token_model import ServiceToken
     from app.models.service_model import Service
-
-    # NEW: Receipt model
     from app.models.receipt import Receipt
+    from app.models.cart_item import CartItem   # ⭐ REQUIRED
 
-    # Create all tables
     Base.metadata.create_all(bind=engine)

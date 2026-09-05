@@ -7,12 +7,12 @@ class CartItem(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    # MUST be a ForeignKey for SQLAlchemy to link User → CartItem
+    # Foreign key linking to User table
     user_id = Column(Integer, ForeignKey("users.id"))
 
-    item_id = Column(String, index=True)
+    # Store item info
+    item_id = Column(Integer, index=True)  # FIXED: should be int to match store_router
     item_name = Column(String)
-
     item_type = Column(String)
     billing = Column(String)
 

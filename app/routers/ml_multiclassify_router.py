@@ -4,40 +4,26 @@ import joblib
 import os
 import numpy as np
 import random
-from sqlalchemy.orm import Session
 
-# Token + DB imports
-from app.database import get_db
-from app.utils.token_utils import is_token_active
+router = APIRouter()
 
 # ---------------------------------------------------------
-# Updated tag for Swagger grouping
+# TOKEN VERIFICATION
 # ---------------------------------------------------------
-router = APIRouter(tags=["MultiClassify V6.1"])
+def verify_token(token: str):
+    expected_token = os.getenv("API_TOKEN")
+    if expected_token and token != expected_token:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return token
 
 # ---------------------------------------------------------
-# TOKEN CHECKS
+# MODEL PATHS (corrected)
 # ---------------------------------------------------------
-def require_v6_token(token: str, db: Session = Depends(get_db)):
-    if not is_token_active(db, token, "v6"):
-        raise HTTPException(status_code=403, detail="Invalid or inactive V6 token")
-    return True
-
-def require_v2_token(token: str, db: Session = Depends(get_db)):
-    if not is_token_active(db, token, "v2"):
-        raise HTTPException(status_code=403, detail="Invalid or inactive V2 token")
-    return True
-
-# ---------------------------------------------------------
-# Model paths for 100-virus classification
-# ---------------------------------------------------------
-MODEL_V2_PATH = "app/ml/models/classify/v2/sim_model_v2_100.pkl"
-MODEL_V6_PATH = "app/ml/models/classify/v6/sim_model_v6_100.pkl"
-MODEL_SPECTRAL_PATH = "app/ml/models/classify/spectral/spectral_model.pkl"
+MODEL_V2_PATH = "app/models/sim_model_v2_100.pkl"
+MODEL_V6_PATH = "app/models/sim_model_v6_100.pkl"
 
 model_v2 = None
 model_v6 = None
-spectral_model = None
 
 def load_models():
     global model_v2, model_v6
@@ -54,88 +40,8 @@ def load_models():
         else:
             raise FileNotFoundError(f"Model file not found: {MODEL_V6_PATH}")
 
-def load_spectral_model():
-    global spectral_model
-
-    if spectral_model is None:
-        if os.path.exists(MODEL_SPECTRAL_PATH):
-            spectral_model = joblib.load(MODEL_SPECTRAL_PATH)
-        else:
-            raise FileNotFoundError(f"Spectral model not found: {MODEL_SPECTRAL_PATH}")
-
-class SimpleClassifyRequest(BaseModel):
-    features: list[float]
-    input_frequency_mhz: float | None = None
-    threshold_hz: float = 0.0
-
 # ---------------------------------------------------------
-# NEW: GET /classify/v2 — Model metadata
-# ---------------------------------------------------------
-@router.get("/classify/v2")
-def get_model_v2_info():
-    load_models()
-    return {
-        "model_version": "v2",
-        "classes": list(map(int, model_v2.classes_)),
-        "num_classes": len(model_v2.classes_),
-        "model_path": MODEL_V2_PATH,
-        "description": "Metadata for ML Model V2 (100-virus classifier)."
-    }
-
-# ---------------------------------------------------------
-# NEW: GET /classify/v6 — Model metadata
-# ---------------------------------------------------------
-@router.get("/classify/v6")
-def get_model_v6_info():
-    load_models()
-    return {
-        "model_version": "v6",
-        "classes": list(map(int, model_v6.classes_)),
-        "num_classes": len(model_v6.classes_),
-        "model_path": MODEL_V6_PATH,
-        "description": "Metadata for ML Model V6 (100-virus classifier)."
-    }
-
-# ---------------------------------------------------------
-# SIMPLE SIMULATION ENDPOINT (8 FEATURES)
-# ---------------------------------------------------------
-@router.get("/simulate")
-def simulate_simple():
-    base_frequency_hz = 1693998.542 + random.uniform(-200, 200)
-    mass_sensitivity = 0.000001 + random.uniform(-0.0000003, 0.0000003)
-    delta_m = 0.0001 + random.uniform(-0.00005, 0.00005)
-    delta_m_over_m = delta_m / 1.0
-    delta_f_hz = mass_sensitivity * base_frequency_hz * delta_m_over_m
-    noise_hz = random.uniform(0.5, 5.0)
-    measured_frequency_hz = base_frequency_hz + delta_f_hz + noise_hz
-    quality_factor = 4990 + random.uniform(-50, 50)
-
-    features = [
-        base_frequency_hz,
-        mass_sensitivity,
-        delta_m,
-        delta_m_over_m,
-        delta_f_hz,
-        noise_hz,
-        measured_frequency_hz,
-        quality_factor
-    ]
-
-    return {
-        "features": features,
-        "base_frequency_hz": base_frequency_hz,
-        "mass_sensitivity": mass_sensitivity,
-        "delta_m": delta_m,
-        "delta_m_over_m": delta_m_over_m,
-        "delta_f_hz": delta_f_hz,
-        "noise_hz": noise_hz,
-        "measured_frequency_hz": measured_frequency_hz,
-        "quality_factor": quality_factor,
-        "message": "Simple 8-feature simulation completed."
-    }
-
-# ---------------------------------------------------------
-# REAL VIRUS NAMES + REAL MASS (1–100)
+# VIRUS NAMES + MASSES (1–100)
 # ---------------------------------------------------------
 virus_names = {
     1: "COVID‑19 (SARS‑CoV‑2)", 2: "Influenza A (H1N1)", 3: "Influenza A (H3N2)",
@@ -206,103 +112,200 @@ masses = {
 }
 
 # ---------------------------------------------------------
-# THRESHOLD FILTERING
+# THRESHOLD NORMALIZATION RULE
 # ---------------------------------------------------------
-def apply_threshold_filter(sorted_results: dict[int, float], threshold_hz: float):
-    if threshold_hz <= 0:
-        return sorted_results
-    return {k: v for k, v in sorted_results.items() if v >= threshold_hz}
+def normalize_threshold(threshold_hz: float) -> float:
+    if threshold_hz is None:
+        return 0.1
+    return float(threshold_hz)
 
 # ---------------------------------------------------------
-# CORRECTED & SYNCHRONIZED V6 CLASSIFIER
+# V6 PHYSICS SIMULATION
 # ---------------------------------------------------------
-@router.post("/classify/v6")
-def classify_v6(
-    req: SimpleClassifyRequest,
-    _=Depends(require_v6_token)  # token required, ML untouched
-):
-    load_models()
+def generate_v6_features(base_frequency_hz: float):
+    mass_sensitivity = 0.000001 + random.uniform(-0.0000003, 0.0000003)
+    delta_m = 0.0001 + random.uniform(-0.00005, 0.00005)
+    delta_m_over_m = delta_m / 1.0
+    delta_f_hz = mass_sensitivity * base_frequency_hz * delta_m_over_m
+    noise_hz = random.uniform(0.5, 5.0)
+    measured_frequency_hz = base_frequency_hz + delta_f_hz + noise_hz
+    quality_factor = 4990 + random.uniform(-50, 50)
 
-    base_frequency_hz = req.features[0] if len(req.features) > 0 else None
-    mass_sensitivity = req.features[1] if len(req.features) > 1 else None
-    delta_m = req.features[2] if len(req.features) > 2 else None
-    delta_m_over_m = req.features[3] if len(req.features) > 3 else None
-    delta_f_hz = req.features[4] if len(req.features) > 4 else None
-    noise_hz = req.features[5] if len(req.features) > 5 else None
-    measured_frequency_hz = req.features[6] if len(req.features) > 6 else None
-    quality_factor = req.features[7] if len(req.features) > 7 else None
-
-    input_frequency_mhz = req.input_frequency_mhz
-    input_frequency_hz = None
-    if input_frequency_mhz is not None:
-        input_frequency_hz = input_frequency_mhz * 1_000_000.0
-        if len(req.features) >= 7:
-            req.features[6] = input_frequency_hz
-            measured_frequency_hz = input_frequency_hz
-
-    probs = model_v6.predict_proba([req.features])[0]
-    classes = model_v6.classes_
-
-    results = {int(classes[i]): float(probs[i]) for i in range(len(classes))}
-    sorted_results = dict(sorted(results.items(), key=lambda x: x[1], reverse=True))
-
-    filtered_results = apply_threshold_filter(sorted_results, req.threshold_hz)
-
-    sorted_masses = {k: masses.get(k) for k in filtered_results.keys()}
-    sorted_names = {k: virus_names.get(k) for k in filtered_results.keys()}
-
-    chart_data = [
-        {"virus_id": int(k), "probability": float(filtered_results[k]), "mass_fg": sorted_masses[k]}
-        for k in filtered_results.keys()
-    ]
-
-    return {
-        "model_version": "v6",
-        "input_features": req.features,
-        "threshold_hz": req.threshold_hz,
+    return [
+        base_frequency_hz,
+        mass_sensitivity,
+        delta_m,
+        delta_m_over_m,
+        delta_f_hz,
+        noise_hz,
+        measured_frequency_hz,
+        quality_factor
+    ], {
         "base_frequency_hz": base_frequency_hz,
-        "measured_frequency_hz": measured_frequency_hz,
-        "input_frequency_mhz": input_frequency_mhz,
-        "input_frequency_hz": input_frequency_hz,
         "mass_sensitivity": mass_sensitivity,
         "delta_m": delta_m,
         "delta_m_over_m": delta_m_over_m,
         "delta_f_hz": delta_f_hz,
         "noise_hz": noise_hz,
-        "quality_factor": quality_factor,
-        "virus_probabilities": filtered_results,
-        "virus_masses_fg": sorted_masses,
-        "virus_names": sorted_names,
-        "chart_data": chart_data,
-        "top_prediction": int(classes[np.argmax(probs)]),
-        "message": "100-virus classification (V6) completed using synchronized sensor frequencies."
+        "measured_frequency_hz": measured_frequency_hz,
+        "quality_factor": quality_factor
     }
 
 # ---------------------------------------------------------
-# CORRECTED & SYNCHRONIZED V2 CLASSIFIER
+# THRESHOLD FILTERING
 # ---------------------------------------------------------
-@router.post("/classify/v2")
-def classify_v2(
-    req: SimpleClassifyRequest,
-    _=Depends(require_v2_token)  # token required, ML untouched
-):
+def apply_threshold_filter(sorted_results: dict[int, float], threshold_hz: float):
+    if threshold_hz <= 0.1:
+        return sorted_results
+    return {k: v for k, v in sorted_results.items() if v >= threshold_hz}
+
+# ---------------------------------------------------------
+# GET /v6/simulation
+# ---------------------------------------------------------
+@router.get("/v6/simulation")
+def get_v6_simulation(base_frequency_hz: float,
+                      token: str = Depends(verify_token)):
+
+    features, physics = generate_v6_features(base_frequency_hz)
+
+    return {
+        "model_version": "v6",
+        "input_base_frequency_hz": base_frequency_hz,
+        "physics": physics,
+        "message": "V6 physics simulation generated."
+    }
+
+# ---------------------------------------------------------
+# GET /v6/classify
+# ---------------------------------------------------------
+@router.get("/v6/classify")
+def get_v6_classify(base_frequency_hz: float,
+                    threshold_hz: float = 0.1,
+                    token: str = Depends(verify_token)):
+
+    threshold_hz = normalize_threshold(threshold_hz)
     load_models()
 
-    base_frequency_hz = req.features[0] if len(req.features) > 0 else None
-    measured_frequency_hz = req.features
-
-    # ---------------------------------------------------------
-# EXPORTABLE FUNCTION FOR COMPARE ROUTER
-# ---------------------------------------------------------
-def run_v6_model(features: list[float], threshold_hz: float):
-    load_models()
-
+    features, physics = generate_v6_features(base_frequency_hz)
     probs = model_v6.predict_proba([features])[0]
     classes = model_v6.classes_
 
     results = {int(classes[i]): float(probs[i]) for i in range(len(classes))}
     sorted_results = dict(sorted(results.items(), key=lambda x: x[1], reverse=True))
-
     filtered_results = apply_threshold_filter(sorted_results, threshold_hz)
 
-    return filtered_results
+    filtered_names = {k: virus_names.get(k) for k in filtered_results.keys()}
+    filtered_masses = {k: masses.get(k) for k in filtered_results.keys()}
+
+    return {
+        "model_version": "v6",
+        "threshold_hz": threshold_hz,
+        "input_base_frequency_hz": base_frequency_hz,
+        **physics,
+        "results": filtered_results,
+        "virus_names": filtered_names,
+        "virus_masses_fg": filtered_masses,
+        "top_prediction": int(classes[np.argmax(probs)]),
+        "message": "V6 classification completed (GET)."
+    }
+
+# ---------------------------------------------------------
+# GET /v6/classifier
+# ---------------------------------------------------------
+@router.get("/v6/classifier")
+def get_v6_classifier(token: str = Depends(verify_token)):
+    load_models()
+
+    return {
+        "model_version": "v6",
+        "classes": list(map(int, model_v6.classes_)),
+        "virus_names": virus_names,
+        "virus_masses_fg": masses,
+        "message": "V6 classifier metadata."
+    }
+
+# ---------------------------------------------------------
+# POST /v6/simulation
+# ---------------------------------------------------------
+class V6SimRequest(BaseModel):
+    base_frequency_hz: float
+
+@router.post("/v6/simulation")
+def post_v6_simulation(req: V6SimRequest,
+                       token: str = Depends(verify_token)):
+
+    features, physics = generate_v6_features(req.base_frequency_hz)
+
+    return {
+        "model_version": "v6",
+        "input_base_frequency_hz": req.base_frequency_hz,
+        "physics": physics,
+        "message": "V6 physics simulation generated (POST)."
+    }
+
+# ---------------------------------------------------------
+# POST /classify/v6
+# ---------------------------------------------------------
+class V6Request(BaseModel):
+    base_frequency_hz: float
+    threshold_hz: float = 0.1
+
+@router.post("/classify/v6")
+def classify_v6(req: V6Request,
+                token: str = Depends(verify_token)):
+
+    req.threshold_hz = normalize_threshold(req.threshold_hz)
+    load_models()
+
+    features, physics = generate_v6_features(req.base_frequency_hz)
+    probs = model_v6.predict_proba([features])[0]
+    classes = model_v6.classes_
+
+    results = {int(classes[i]): float(probs[i]) for i in range(len(classes))}
+    sorted_results = dict(sorted(results.items(), key=lambda x: x[1], reverse=True))
+    filtered_results = apply_threshold_filter(sorted_results, req.threshold_hz)
+
+    filtered_names = {k: virus_names.get(k) for k in filtered_results.keys()}
+    filtered_masses = {k: masses.get(k) for k in filtered_results.keys()}
+
+    return {
+        "model_version": "v6",
+        "threshold_hz": req.threshold_hz,
+        "input_base_frequency_hz": req.base_frequency_hz,
+        **physics,
+        "results": filtered_results,
+        "virus_names": filtered_names,
+        "virus_masses_fg": filtered_masses,
+        "top_prediction": int(classes[np.argmax(probs)]),
+        "message": "V6 classification completed using restored physics simulation."
+    }
+
+# ---------------------------------------------------------
+# POST /classify/v2
+# ---------------------------------------------------------
+class SimpleClassifyRequest(BaseModel):
+    features: list[float]
+    threshold_hz: float = 0.1
+
+@router.post("/classify/v2")
+def classify_v2(req: SimpleClassifyRequest,
+                token: str = Depends(verify_token)):
+
+    req.threshold_hz = normalize_threshold(req.threshold_hz)
+    load_models()
+
+    probs = model_v2.predict_proba([req.features])[0]
+    classes = model_v2.classes_
+
+    results = {int(classes[i]): float(probs[i]) for i in range(len(classes))}
+    sorted_results = dict(sorted(results.items(), key=lambda x: x[1], reverse=True))
+    filtered_results = apply_threshold_filter(sorted_results, req.threshold_hz)
+
+    return {
+        "model_version": "v2",
+        "input_features": req.features,
+        "threshold_hz": req.threshold_hz,
+        "results": filtered_results,
+        "top_prediction": int(classes[np.argmax(probs)]),
+        "message": "V2 classification completed."
+    }

@@ -1,7 +1,7 @@
-import os
 from dotenv import load_dotenv
 load_dotenv()
 
+import os
 import logging.config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,16 +29,18 @@ from app.models.cart_item import CartItem
 from app.models.receipt import Receipt
 from app.models.document import Document
 from app.models.consulting_model import ConsultingRequestModel
-from app.models.token_model import TokenModel   # ⭐ FIXED IMPORT
+from app.models.token_model import TokenModel
 from app.models.service_model import Service
+from app.models.user import User
 
-# Routers (non‑ML only)
+# Routers (non‑ML)
 from app.routers.home_router import router as home_router
 from app.profile_router import router as profile_router
 
 from app.routers import payments
 from app.routers.stripe_router import router as stripe_router
 from app.routers.cart_router import router as cart_router, alias_router as cart_alias_router
+from app.routers.store_router import router as store_router   # ⭐ RESTORED
 from app.routers.payment_webhook import router as payment_webhook_router
 from app.routers.webhook import router as stripe_webhook_router
 
@@ -65,6 +67,12 @@ from app.routers.payments_router import router as payments_router
 
 # Virus list router
 from app.routers.virus_list import router as virus_list_router
+
+# ML Routers
+# from app.routers.classify_router import router as classify_v2_router
+# from app.routers.ml_multiclassify_router import router as ml_multiclassify_router
+from app.routers.sensor_live_drift import router as sensor_live_drift_router
+from app.routers.ml_training_router import router as ml_training_router
 
 # Lifespan
 @asynccontextmanager
@@ -131,9 +139,10 @@ app.include_router(students_router, tags=["Students"])
 
 app.include_router(virus_list_router, tags=["Virus List"])
 
-app.include_router(stripe_router, prefix="/store", tags=["Store"])
-app.include_router(cart_router)
-app.include_router(cart_alias_router)
+# ⭐ RESTORED STORE + CART ROUTERS
+app.include_router(store_router, tags=["Store"])
+app.include_router(cart_router, tags=["Cart"])
+app.include_router(cart_alias_router, tags=["Cart"])
 
 app.include_router(payment_webhook_router)
 
@@ -145,6 +154,12 @@ app.include_router(calendar_router)
 
 init_receipts(app)
 app.include_router(payments_router)
+
+# ML Routers
+# app.include_router(classify_v2_router)
+# pp.include_router(ml_multiclassify_router, tags=["ML V6"])
+app.include_router(ml_training_router, tags=["ML Training"])
+app.include_router(sensor_live_drift_router)
 
 # Email sender
 from pydantic import BaseModel

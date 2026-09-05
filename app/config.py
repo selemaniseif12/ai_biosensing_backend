@@ -34,9 +34,19 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str | None = None
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    # ⭐ ML model URLs (required to stop ValidationError)
+    VIRUS_CLASSIFIER_URL: str | None = None
+    VIRUS_MULTICLASS_V7_URL: str | None = None
+    SPECTRAL_MODEL_URL: str | None = None
+    RF_MODEL_URL: str | None = None
+    SCALER_URL: str | None = None
+
+    # ⭐ Pydantic v2 configuration (replaces old Config class)
+    model_config = {
+        "extra": "ignore",
+        "env_file": ".env",
+        "case_sensitive": True
+    }
 
 
 @lru_cache

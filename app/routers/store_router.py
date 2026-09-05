@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException
 
-router = APIRouter(tags=["Store"])
+router = APIRouter(prefix="/store", tags=["Store"])
 
 PRODUCTS = [
     {
-        "id": "consulting_fixed",
+        "id": 1,
         "name": "Fixed Consulting Package",
         "type": "service",
         "price": 199,
@@ -13,7 +13,7 @@ PRODUCTS = [
         "coming_soon": False
     },
     {
-        "id": "consulting_custom",
+        "id": 2,
         "name": "Custom Consulting Package",
         "type": "service",
         "price": 499,
@@ -22,7 +22,7 @@ PRODUCTS = [
         "coming_soon": False
     },
     {
-        "id": "course_intro",
+        "id": 3,
         "name": "Intro to Biosensing & Frequency Noise",
         "type": "course",
         "price": 59,
@@ -31,7 +31,7 @@ PRODUCTS = [
         "coming_soon": True
     },
     {
-        "id": "course_ml_v2",
+        "id": 4,
         "name": "ML V2 Training Course",
         "type": "course",
         "price": 79,
@@ -40,7 +40,7 @@ PRODUCTS = [
         "coming_soon": True
     },
     {
-        "id": "course_ml_v6",
+        "id": 5,
         "name": "ML V6 Training Course",
         "type": "course",
         "price": 99,
@@ -49,7 +49,7 @@ PRODUCTS = [
         "coming_soon": True
     },
     {
-        "id": "course_fullstack_api",
+        "id": 6,
         "name": "Full Stack API Engineering Course",
         "type": "course",
         "price": 799,
@@ -58,7 +58,7 @@ PRODUCTS = [
         "coming_soon": False
     },
     {
-        "id": "ml_v2",
+        "id": 7,
         "name": "ML V2 Model Access",
         "type": "digital",
         "price": 49,
@@ -67,7 +67,7 @@ PRODUCTS = [
         "coming_soon": False
     },
     {
-        "id": "ml_v6",
+        "id": 8,
         "name": "ML V6 Model Access",
         "type": "digital",
         "price": 69,
@@ -76,7 +76,7 @@ PRODUCTS = [
         "coming_soon": False
     },
     {
-        "id": "ml_bundle_v2_v6",
+        "id": 9,
         "name": "ML V2/V6 Bundle",
         "type": "digital",
         "price": 99,
@@ -85,7 +85,7 @@ PRODUCTS = [
         "coming_soon": False
     },
     {
-        "id": "virus_list",
+        "id": 10,
         "name": "Virus Database Subscription",
         "type": "digital",
         "price": 29,
@@ -94,7 +94,7 @@ PRODUCTS = [
         "coming_soon": False
     },
     {
-        "id": "device_lowgrade",
+        "id": 11,
         "name": "Low-Grade Patented Biosensing Device",
         "type": "physical",
         "price": 299,
@@ -104,14 +104,12 @@ PRODUCTS = [
     }
 ]
 
-
 @router.get("/products")
 def get_products():
     return PRODUCTS
 
-
 @router.get("/product/{item_id}")
-def get_product(item_id: str):
+def get_product(item_id: int):
     for item in PRODUCTS:
         if item["id"] == item_id:
             return item

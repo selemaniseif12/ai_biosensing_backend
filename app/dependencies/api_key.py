@@ -1,12 +1,11 @@
 from fastapi import Header, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 
-from app.db_models.database import get_db   # <-- FIXED
+from app.db_models.database import get_db
 from app.crud.api_keys import (
     get_api_key_by_value,
     increment_usage
 )
-
 
 def require_api_key(
     x_api_key: str = Header(None, alias="X-API-Key"),

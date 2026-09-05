@@ -1,81 +1,52 @@
-from datetime import datetime, timedelta
-from fastapi import HTTPException, Depends
+from datetime import datetime
 from sqlalchemy.orm import Session
-
-from app.database import get_db
-from app.models.service_token_model import ServiceToken
+from app.models.token_model import TokenModel
 
 
-
-# ---------------------------------------------------------
-# CREATE TOKEN (LEGACY RESTORED)
-# ---------------------------------------------------------
-def create_token(db: Session, service_name: str, user_id: int | None = None):
+def is_token_active(db: Session, token: str, required_type: str):
     """
-    Legacy token creation restored.
-    Accepts:
-    {
-      "service_name": "v6",
-      "user_id": 1974
-    }
+    Strict single-type token validation.
+    Checks:
+    - token exists
+    - token_type matches required_type
+    - token is active
+    - token is not expired
     """
+    db_token = db.query(TokenModel).filter(TokenModel.token == token).first()
 
-    import secrets
-    token_value = secrets.token_hex(16)
-
-    token_record = ServiceToken(
-        token=token_value,
-        token_type=service_name,      # REQUIRED for v2/v6/VirusList
-        service_name=service_name,
-        user_id=user_id,
-        is_active=True,
-        created_at=datetime.utcnow(),
-        expires_at=datetime.utcnow() + timedelta(days=30)
-    )
-
-    db.add(token_record)
-    db.commit()
-    db.refresh(token_record)
-
-    return token_record
-
-
-# ---------------------------------------------------------
-# CHECK IF TOKEN IS ACTIVE (LEGACY)
-# ---------------------------------------------------------
-def is_token_active(db: Session, token: str, service_name: str) -> bool:
-    """
-    Checks if a token is active and matches the service.
-    Used by routers before loading dashboards or APIs.
-    """
-    record = (
-        db.query(ServiceToken)
-        .filter(
-            ServiceToken.token == token,
-            ServiceToken.token_type == service_name,
-            ServiceToken.is_active == True
-        )
-        .first()
-    )
-    return record is not None
-
-
-# ---------------------------------------------------------
-# DEACTIVATE TOKEN (LEGACY)
-# ---------------------------------------------------------
-def deactivate_token(db: Session, token: str) -> bool:
-    """
-    Deactivates a token (admin or system).
-    """
-    record = (
-        db.query(ServiceToken)
-        .filter(ServiceToken.token == token)
-        .first()
-    )
-
-    if not record:
+    if not db_token:
         return False
 
-    record.is_active = False
-    db.commit()
+    if db_token.token_type != required_type:
+        return False
+
+    if not db_token.is_active:
+        return False
+
+    if db_token.expires_at is not None and db_token.expires_at < datetime.utcnow():
+        return False
+
+    return True
+
+
+def is_any_valid_token(db: Session, token: str, allowed_types: list[str]):
+    """
+    Multi-type token validation.
+    Example:
+        allowed_types = ["ml_v6"]
+    """
+    db_token = db.query(TokenModel).filter(TokenModel.token == token).first()
+
+    if not db_token:
+        return False
+
+    if db_token.token_type not in allowed_types:
+        return False
+
+    if not db_token.is_active:
+        return False
+
+    if db_token.expires_at is not None and db_token.expires_at < datetime.utcnow():
+        return False
+
     return True

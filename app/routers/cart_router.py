@@ -7,9 +7,9 @@ from app.routers.store_router import get_products
 
 router = APIRouter(prefix="/store/cart", tags=["Cart"])
 
-# NEW: JSON model for cart requests
+# JSON model for cart requests
 class CartAddRequest(BaseModel):
-    item_id: str
+    item_id: int
     user_id: int
 
 
@@ -20,14 +20,6 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
 
 @router.post("/add")
 def add_to_cart(payload: CartAddRequest, db: Session = Depends(get_db)):
-    """
-    Accepts JSON:
-    {
-        "item_id": "fixed_consulting",
-        "user_id": 1
-    }
-    """
-
     store_items = get_products()
     store_item = next((item for item in store_items if item["id"] == payload.item_id), None)
 
@@ -46,21 +38,26 @@ def add_to_cart(payload: CartAddRequest, db: Session = Depends(get_db)):
 
     db.add(cart_item)
     db.commit()
-    return {"message": "Added to cart"}
+    db.refresh(cart_item)
+
+    return {"message": "Added to cart", "item": cart_item}
 
 
 @router.delete("/delete")
 def delete_cart_item(item_id: int, db: Session = Depends(get_db)):
     item = db.query(CartItem).filter(CartItem.id == item_id).first()
+
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
+
     db.delete(item)
     db.commit()
+
     return {"message": "Item deleted"}
 
 
 # -----------------------------------------------------------
-# NEW: Alias routes for /cart/add used by Government Homepage
+# Alias routes for government homepage
 # -----------------------------------------------------------
 
 alias_router = APIRouter(tags=["Cart Alias"])
