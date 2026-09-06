@@ -11,18 +11,30 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
+def _prepare_password(password: str) -> bytes:
+    """
+    Convert password to bytes and truncate to 72 bytes.
+    Bcrypt requires <= 72 bytes.
+    """
+    if isinstance(password, str):
+        password = password.encode("utf-8")
+    return password[:72]
+
+
 def hash_password(password: str) -> str:
     """
-    Hash a plain password using bcrypt.
+    Hash a password using bcrypt with safe truncation.
     """
-    return pwd_context.hash(password)
+    prepared = _prepare_password(password)
+    return pwd_context.hash(prepared)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
-    Verify a plain password against its hashed version.
+    Verify a password using bcrypt with safe truncation.
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    prepared = _prepare_password(plain_password)
+    return pwd_context.verify(prepared, hashed_password)
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
