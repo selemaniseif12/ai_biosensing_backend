@@ -1,28 +1,36 @@
-from fastapi import HTTPException
-from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.auth import UserCreate
-from app.utils.hashing import hash_password, verify_password
+from app.core.security import hash_password, verify_password
+from app.database import get_db
+from sqlalchemy.orm import Session
 
-def register_user(db: Session, user: UserCreate):
-    existing_user = db.query(User).filter(User.email == user.email).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
 
-    hashed_pw = hash_password(user.password)
-    new_user = User(email=user.email, password=hashed_pw)
+def register_user(db: Session, user_data: UserCreate):
+    # Hash the password
+    hashed_pw = hash_password(user_data.password)
 
+    # Create user instance
+    new_user = User(
+        email=user_data.email,
+        password=hashed_pw,
+        full_name=user_data.full_name,
+    )
+
+    # Save to DB
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
     return new_user
 
+
 def authenticate_user(db: Session, email: str, password: str):
+    # Find user
     user = db.query(User).filter(User.email == email).first()
     if not user:
         return None
 
+    # Verify password
     if not verify_password(password, user.password):
         return None
 
