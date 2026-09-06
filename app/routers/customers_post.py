@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from app.database import Base, engine, SessionLocal
 
-from app.db_models.models import User
+from app.models.models import User
 
 router = APIRouter(prefix="/customers", tags=["Customers"])
 

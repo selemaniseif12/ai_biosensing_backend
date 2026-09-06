@@ -5,7 +5,7 @@ import asyncio, json, time
 
 from app.database import Base, engine, SessionLocal
 
-from app.db_models.sensor_history import SensorHistory
+from app.models.sensor_history import SensorHistory
 
 router = APIRouter()
 

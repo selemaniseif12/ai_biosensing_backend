@@ -1,6 +1,6 @@
 # app/crud/ml_logging.py
 from sqlalchemy.orm import Session
-from app.db_models.ml_log import MLLog
+from app.models.ml_log import MLLog
 
 def create_log(db: Session, model_id: int, run_id: str, status: str = "pending", duration: float = None, accuracy: float = None):
     log = MLLog(

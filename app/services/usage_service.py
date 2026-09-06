@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.db_models.usage import UsageLog
+from app.models.usage import UsageLog
 from app.schemas.usage import UsageCreate
 
 

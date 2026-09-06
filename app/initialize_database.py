@@ -2,7 +2,7 @@ import csv
 import os
 from sqlalchemy import text
 from app.db_core import engine, SessionLocal
-from app.db_models.models import Virus
+from app.models.models import Virus
 
 
 # ---------------------------------------------------------

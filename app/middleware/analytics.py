@@ -1,6 +1,6 @@
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.orm import Session
-from app.db_models.database import SessionLocal   # <-- FIXED
+from app.models.database import SessionLocal   # <-- FIXED
 
 
 class AnalyticsMiddleware(BaseHTTPMiddleware):

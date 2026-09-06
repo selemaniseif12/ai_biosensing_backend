@@ -1,6 +1,6 @@
 import csv
 from app.db_core import SessionLocal
-from app.db_models.models import Analyzer1Device
+from app.models.models import Analyzer1Device
 
 def load_devices():
     db = SessionLocal()

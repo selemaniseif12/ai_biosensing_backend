@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.db_models.models import Sample
+from app.models.models import Sample
 
 
 def create_sample(sample_data, db: Session):

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.db_models.models import Measurement, Analyzer1Device
+from app.models.models import Measurement, Analyzer1Device
 
 
 def create_measurement(data, db: Session):

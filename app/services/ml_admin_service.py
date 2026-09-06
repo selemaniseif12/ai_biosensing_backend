@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.db_models.ml_log import MLLog
+from app.models.ml_log import MLLog
 
 
 # ---------------------------------------------------------

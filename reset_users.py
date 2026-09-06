@@ -1,5 +1,5 @@
-from app.db_models.database import SessionLocal
-from app.db_models.models import User
+from app.models.database import SessionLocal
+from app.models.models import User
 
 def reset_users():
     db = SessionLocal()

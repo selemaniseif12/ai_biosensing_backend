@@ -4,7 +4,7 @@ from typing import List, Dict
 from sqlalchemy.orm import Session
 from app.database import Base, engine, SessionLocal
 
-from app.db_models.models import Device  # adjust if needed
+from app.models.models import Device  # adjust if needed
 
 router = APIRouter(prefix="/devices", tags=["Device Analytics"])
 

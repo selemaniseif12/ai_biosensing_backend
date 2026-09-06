@@ -4,7 +4,7 @@ from sqlalchemy import String
 
 from app.dependencies.db import get_db
 
-from app.db_models.analysis_log_model import AnalysisLog  # <-- FIXED
+from app.models.analysis_log_model import AnalysisLog  # <-- FIXED
 
 router = APIRouter(
     prefix="/analytics",

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db_core import get_db
-from app.db_models.models import Analyzer1Device, Measurement
+from app.models.models import Analyzer1Device, Measurement
 
 router = APIRouter(
     prefix="/analyzer_v1",

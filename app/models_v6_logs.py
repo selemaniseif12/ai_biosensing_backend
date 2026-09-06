@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Float, DateTime
-from app.db_models.database import engine
+from app.models.database import engine
 
 
 class AnalyzerV6Log(Base):
