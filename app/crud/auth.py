@@ -3,9 +3,7 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from jose import jwt
 
-# ⭐ FIX: Use the correct subscription user model
 from app.models.user import User
-
 from app.schemas.auth import UserCreate, UserLogin
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -27,7 +25,8 @@ def authenticate_user(db: Session, email: str, password: str):
     user = db.query(User).filter(User.email == email).first()
     if not user:
         return None
-    if not verify_password(password, user.password_hash):
+    # FIX: use user.password instead of user.password_hash
+    if not verify_password(password, user.password):
         return None
     return user
 
@@ -43,9 +42,10 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 def create_user(db: Session, user_data: UserCreate):
     hashed_pw = get_password_hash(user_data.password)
+    # FIX: store hashed password in `password`, not `password_hash`
     db_user = User(
         email=user_data.email,
-        password_hash=hashed_pw,
+        password=hashed_pw,
     )
     db.add(db_user)
     db.commit()

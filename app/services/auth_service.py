@@ -15,7 +15,7 @@ def register_user(user: UserCreate, db: Session):
 
     new_user = User(
         email=user.email,
-        password_hash=hashed_password
+        password=hashed_password
     )
 
     db.add(new_user)
@@ -25,14 +25,13 @@ def register_user(user: UserCreate, db: Session):
     return {"message": "User registered successfully"}
 
 
-# ⭐ Added authenticate_user (this fixes your ImportError)
 def authenticate_user(email: str, password: str, db: Session):
     db_user = db.query(User).filter(User.email == email).first()
 
     if not db_user:
         return None
 
-    if not verify_password(password, db_user.password_hash):
+    if not verify_password(password, db_user.password):
         return None
 
     return db_user
