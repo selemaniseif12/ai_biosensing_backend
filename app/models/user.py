@@ -8,7 +8,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, nullable=False)
-    password = Column(String, nullable=False)   # ✔ CORRECT
+    password = Column(String, nullable=False)
+    full_name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Subscriptions relationship
