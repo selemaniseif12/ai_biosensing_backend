@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
-from passlib.context import CryptContext
 from jose import jwt
+from argon2 import PasswordHasher
 
-# Password hashing configuration
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Argon2 password hasher
+ph = PasswordHasher()
 
 # JWT configuration
 SECRET_KEY = "CHANGE_THIS_SECRET_KEY"
@@ -11,30 +11,22 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
-def _prepare_password(password: str) -> bytes:
-    """
-    Convert password to bytes and truncate to 72 bytes.
-    Bcrypt requires <= 72 bytes.
-    """
-    if isinstance(password, str):
-        password = password.encode("utf-8")
-    return password[:72]
-
-
 def hash_password(password: str) -> str:
     """
-    Hash a password using bcrypt with safe truncation.
+    Hash a password using Argon2 (no 72-byte limit).
     """
-    prepared = _prepare_password(password)
-    return pwd_context.hash(prepared)
+    return ph.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
-    Verify a password using bcrypt with safe truncation.
+    Verify a password using Argon2.
     """
-    prepared = _prepare_password(plain_password)
-    return pwd_context.verify(prepared, hashed_password)
+    try:
+        ph.verify(hashed_password, plain_password)
+        return True
+    except Exception:
+        return False
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
