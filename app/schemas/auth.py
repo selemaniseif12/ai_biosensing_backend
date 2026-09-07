@@ -1,7 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 class UserBase(BaseModel):
-    email: str
+    email: EmailStr
+    full_name: str
 
 class UserOut(UserBase):
     id: int
@@ -12,12 +13,13 @@ class UserOut(UserBase):
         orm_mode = True
 
 class UserCreate(BaseModel):
-    email: str
+    email: EmailStr
     password: str
+    full_name: str
     role: str = "user"
 
 class UserLogin(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 class Token(BaseModel):

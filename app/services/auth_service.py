@@ -1,9 +1,7 @@
 from app.models.user import User
 from app.schemas.auth import UserCreate
 from app.core.security import hash_password, verify_password
-from app.database import get_db
 from sqlalchemy.orm import Session
-
 
 def register_user(db: Session, user_data: UserCreate):
     # Hash the password
@@ -22,7 +20,6 @@ def register_user(db: Session, user_data: UserCreate):
     db.refresh(new_user)
 
     return new_user
-
 
 def authenticate_user(db: Session, email: str, password: str):
     # Find user

@@ -10,16 +10,10 @@ router = APIRouter(
     tags=["Auth"]
 )
 
-# -----------------------------
-# Register User
-# -----------------------------
 @router.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
     return register_user(db, user)
 
-# -----------------------------
-# Login User
-# -----------------------------
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = authenticate_user(db, user.email, user.password)
@@ -28,7 +22,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     return {
-        "access_token": "dummy",  # Replace with real token logic
+        "access_token": "dummy",
         "email": db_user.email,
         "user_id": db_user.id
     }
