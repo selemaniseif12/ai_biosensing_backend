@@ -8,7 +8,8 @@ class CartItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
 
-    item_id = Column(Integer, index=True)
+    item_id = Column(String, index=True)
+
     item_name = Column(String)
     item_type = Column(String)
     billing = Column(String)
