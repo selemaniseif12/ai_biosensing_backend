@@ -10,7 +10,6 @@ router = APIRouter(prefix="/store/cart", tags=["Cart"])
 # JSON model for cart requests
 class CartAddRequest(BaseModel):
     item_id: int
-    user_id: int
 
 
 @router.get("")
@@ -19,20 +18,22 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/add")
-def add_to_cart(payload: CartAddRequest, db: Session = Depends(get_db)):
+def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get_db)):
     store_items = get_products()
-    store_item = next((item for item in store_items if item["id"] == payload.item_id), None)
+
+    # SQLAlchemy rows → use attribute access, not dict
+    store_item = next((item for item in store_items if item.id == payload.item_id), None)
 
     if not store_item:
         raise HTTPException(status_code=404, detail="Store item not found")
 
     cart_item = CartItem(
         item_id=payload.item_id,
-        user_id=payload.user_id,
-        item_name=store_item["name"],
-        item_type=store_item["type"],
-        billing=store_item["billing"],
-        price_usd=store_item["price"],
+        user_id=user_id,
+        item_name=store_item.name,
+        item_type=store_item.type,
+        billing=store_item.billing,
+        price_usd=store_item.price_usd,  # FIXED
         quantity=1
     )
 
@@ -44,8 +45,11 @@ def add_to_cart(payload: CartAddRequest, db: Session = Depends(get_db)):
 
 
 @router.delete("/delete")
-def delete_cart_item(item_id: int, db: Session = Depends(get_db)):
-    item = db.query(CartItem).filter(CartItem.id == item_id).first()
+def delete_cart_item(user_id: int, item_id: int, db: Session = Depends(get_db)):
+    item = db.query(CartItem).filter(
+        CartItem.user_id == user_id,
+        CartItem.item_id == item_id
+    ).first()
 
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -57,19 +61,19 @@ def delete_cart_item(item_id: int, db: Session = Depends(get_db)):
 
 
 # -----------------------------------------------------------
-# Alias routes for government homepage
+# Alias routes
 # -----------------------------------------------------------
 
 alias_router = APIRouter(tags=["Cart Alias"])
 
 @alias_router.post("/cart/add")
-def alias_add_to_cart(payload: CartAddRequest, db: Session = Depends(get_db)):
-    return add_to_cart(payload=payload, db=db)
+def alias_add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get_db)):
+    return add_to_cart(user_id=user_id, payload=payload, db=db)
 
 @alias_router.get("/cart")
 def alias_get_cart(user_id: int, db: Session = Depends(get_db)):
     return get_cart(user_id=user_id, db=db)
 
 @alias_router.delete("/cart/delete")
-def alias_delete_cart_item(item_id: int, db: Session = Depends(get_db)):
-    return delete_cart_item(item_id=item_id, db=db)
+def alias_delete_cart_item(user_id: int, item_id: int, db: Session = Depends(get_db)):
+    return delete_cart_item(user_id=user_id, item_id=item_id, db=db)

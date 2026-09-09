@@ -29,5 +29,13 @@ def process_checkout(user_id: int, db: Session = Depends(get_db)):
         "message": "Payment processed successfully",
         "status": payment_status,
         "total": total,
-        "items": [item.item_name for item in cart_items],
+        "items": [
+            {
+                "item_id": item.item_id,
+                "name": item.item_name,
+                "quantity": item.quantity,
+                "price_usd": item.price_usd
+            }
+            for item in cart_items
+        ]
     }
