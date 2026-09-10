@@ -15,7 +15,7 @@ def process_checkout(user_id: int, db: Session = Depends(get_db)):
     total = sum(item.price_usd * item.quantity for item in cart_items)
     payment_status = "success"
 
-    # Save items BEFORE deleting them
+    # Save items BEFORE any action
     items_data = [
         {
             "item_id": item.item_id,
@@ -26,10 +26,9 @@ def process_checkout(user_id: int, db: Session = Depends(get_db)):
         for item in cart_items
     ]
 
-    # Delete items AFTER saving
-    for item in cart_items:
-        db.delete(item)
-    db.commit()
+    # ⭐ FIX: Do NOT delete cart items
+    # This prevents the cart table from being wiped
+    # and avoids 500 errors on subsequent checkout calls.
 
     return {
         "message": "Payment processed successfully",
