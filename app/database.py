@@ -61,5 +61,4 @@ def init_db():
     from app.models.service_model import Service
     from app.models.receipt import Receipt
     from app.models.cart_item import CartItem   # ⭐ REQUIRED
-
-    Base.metadata.create_all(bind=engine)
+   
