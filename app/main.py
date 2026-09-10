@@ -13,7 +13,6 @@ from app.database import Base, engine, SessionLocal, init_db
 
 # Seeders
 from app.seed.store_seed import seed_store_products
-from app.initial_data import run_initial_load
 
 # Models (needed for init_db)
 from app.models.students import Student
@@ -85,7 +84,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# ⭐ CORS Middleware (Step 3)
+# ⭐ CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -100,15 +99,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Startup
+# ⭐ Startup — CLEANED
 @app.on_event("startup")
 async def startup_event():
     logging.config.dictConfig(LOGGING_CONFIG)
     init_db()
 
+    # ⭐ IMPORTANT:
+    # Removed run_initial_load(db) — this was wiping cart_item rows.
+    # Removed any destructive reseeding logic.
     db = SessionLocal()
     seed_store_products(db)
-    run_initial_load(db)
     db.close()
 
 # Static files
