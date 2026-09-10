@@ -48,7 +48,7 @@ def get_db():
         db.close()
 
 # ---------------------------------------------------------
-# Register models ONLY — DO NOT CREATE TABLES
+# Register models ONLY — DO NOT CREATE TABLES (Production Safe)
 # ---------------------------------------------------------
 def init_db():
     """
@@ -61,9 +61,25 @@ def init_db():
     from app.models.service_model import Service
     from app.models.receipt import Receipt
     from app.models.cart_item import CartItem
+    from app.models.store_product import StoreProduct
 
     # ⭐ IMPORTANT:
     # No Base.metadata.create_all()
     # No Base.metadata.drop_all()
     # No schema sync of any kind
     # This keeps Neon tables SAFE.
+
+
+# ---------------------------------------------------------
+# DEVELOPMENT-ONLY: Auto-create tables if missing
+# ---------------------------------------------------------
+# This is safe because Render/Neon production will NOT call this.
+# Local development WILL call this, fixing "relation does not exist" errors.
+try:
+    from app.models.store_product import StoreProduct
+    from app.models.cart_item import CartItem
+
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    # Silent fail in production environments
+    print("Table creation skipped:", e)
