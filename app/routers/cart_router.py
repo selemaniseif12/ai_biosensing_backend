@@ -6,25 +6,20 @@ from app.models.cart_item import CartItem
 
 router = APIRouter(prefix="/store/cart", tags=["Cart"])
 
-# JSON model for cart requests
 class CartAddRequest(BaseModel):
-    item_id: str   # <-- FIXED: item_id is STRING
-
+    item_id: str
 
 @router.get("")
 def get_cart(user_id: int, db: Session = Depends(get_db)):
     return db.query(CartItem).filter(CartItem.user_id == user_id).all()
 
-
 @router.post("/add")
 def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get_db)):
-    # Fetch product directly from DB using string item_id
     product = db.query(CartItem).filter(CartItem.item_id == payload.item_id).first()
 
     if not product:
         raise HTTPException(status_code=404, detail="Store item not found")
 
-    # Create a new cart entry
     cart_item = CartItem(
         user_id=user_id,
         item_id=product.item_id,
@@ -47,10 +42,9 @@ def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get
         }
     }
 
-
 @router.delete("/delete")
 def delete_cart_item(user_id: int, item_id: str, db: Session = Depends(get_db)):
-    item = db.query(CCartItem).filter(
+    item = db.query(CartItem).filter(
         CartItem.user_id == user_id,
         CartItem.item_id == item_id
     ).first()
@@ -62,11 +56,6 @@ def delete_cart_item(user_id: int, item_id: str, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Item deleted"}
-
-
-# -----------------------------------------------------------
-# Alias routes
-# -----------------------------------------------------------
 
 alias_router = APIRouter(tags=["Cart Alias"])
 
