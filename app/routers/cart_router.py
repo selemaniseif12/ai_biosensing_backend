@@ -1,21 +1,32 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+
 from app.database import get_db
 from app.models.cart_item import CartItem
+from app.models.store_product import StoreProduct
 
 router = APIRouter(prefix="/store/cart", tags=["Cart"])
 
 class CartAddRequest(BaseModel):
     item_id: str
 
+
+# ---------------------------
+# GET CART ITEMS
+# ---------------------------
 @router.get("")
 def get_cart(user_id: int, db: Session = Depends(get_db)):
     return db.query(CartItem).filter(CartItem.user_id == user_id).all()
 
+
+# ---------------------------
+# ADD ITEM TO CART
+# ---------------------------
 @router.post("/add")
 def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get_db)):
-    product = db.query(CartItem).filter(CartItem.item_id == payload.item_id).first()
+    # FIX: Query StoreProduct instead of CartItem
+    product = db.query(StoreProduct).filter(StoreProduct.item_id == payload.item_id).first()
 
     if not product:
         raise HTTPException(status_code=404, detail="Store item not found")
@@ -23,7 +34,7 @@ def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get
     cart_item = CartItem(
         user_id=user_id,
         item_id=product.item_id,
-        item_name=product.item_name,
+        item_name=product.name,
         quantity=1,
         price_usd=product.price_usd
     )
@@ -42,6 +53,10 @@ def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get
         }
     }
 
+
+# ---------------------------
+# DELETE ITEM FROM CART
+# ---------------------------
 @router.delete("/delete")
 def delete_cart_item(user_id: int, item_id: str, db: Session = Depends(get_db)):
     item = db.query(CartItem).filter(
@@ -57,6 +72,10 @@ def delete_cart_item(user_id: int, item_id: str, db: Session = Depends(get_db)):
 
     return {"message": "Item deleted"}
 
+
+# ---------------------------
+# ALIAS ROUTES
+# ---------------------------
 alias_router = APIRouter(tags=["Cart Alias"])
 
 @alias_router.post("/cart/add")
