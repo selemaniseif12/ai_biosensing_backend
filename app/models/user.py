@@ -11,5 +11,5 @@ class User(Base):
     full_name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # Remove cart_items relationship
-    # Remove subscriptions relationship if Subscription has no FK
+    # REMOVE subscriptions relationship
+    # REMOVE cart_items relationship (already removed)
