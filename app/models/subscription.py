@@ -17,4 +17,4 @@ class Subscription(Base):
     end_date = Column(DateTime, nullable=False)
 
     # ⭐ THIS IS WHAT WAS MISSING
-    user = relationship("User", back_populates="subscriptions")
+   
