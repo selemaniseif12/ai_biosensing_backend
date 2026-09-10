@@ -25,12 +25,32 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
 # ---------------------------
 @router.post("/add")
 def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get_db)):
-    # FIX: Query StoreProduct instead of CartItem
     product = db.query(StoreProduct).filter(StoreProduct.item_id == payload.item_id).first()
 
     if not product:
         raise HTTPException(status_code=404, detail="Store item not found")
 
+    # ⭐ FIX: If item already exists, increase quantity instead of inserting duplicate
+    existing = db.query(CartItem).filter(
+        CartItem.user_id == user_id,
+        CartItem.item_id == payload.item_id
+    ).first()
+
+    if existing:
+        existing.quantity += 1
+        db.commit()
+        db.refresh(existing)
+        return {
+            "message": "Quantity updated",
+            "item": {
+                "item_id": existing.item_id,
+                "item_name": existing.item_name,
+                "quantity": existing.quantity,
+                "price_usd": existing.price_usd
+            }
+        }
+
+    # Create new cart item
     cart_item = CartItem(
         user_id=user_id,
         item_id=product.item_id,
