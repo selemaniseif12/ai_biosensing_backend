@@ -48,17 +48,22 @@ def get_db():
         db.close()
 
 # ---------------------------------------------------------
-# Create all tables in Neon
+# Register models ONLY — DO NOT CREATE TABLES
 # ---------------------------------------------------------
 def init_db():
     """
-    Ensures all SQLAlchemy models create their tables in Neon PostgreSQL.
+    Import models so SQLAlchemy registers them.
+    DO NOT create or modify tables in production.
     """
 
-    # Import ALL models so SQLAlchemy knows them
     from app.models.token_model import TokenModel
     from app.models.consulting_model import ConsultingRequestModel
     from app.models.service_model import Service
     from app.models.receipt import Receipt
-    from app.models.cart_item import CartItem   # ⭐ REQUIRED
-   
+    from app.models.cart_item import CartItem
+
+    # ⭐ IMPORTANT:
+    # No Base.metadata.create_all()
+    # No Base.metadata.drop_all()
+    # No schema sync of any kind
+    # This keeps Neon tables SAFE.
