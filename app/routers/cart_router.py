@@ -50,7 +50,7 @@ def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get
 
 @router.delete("/delete")
 def delete_cart_item(user_id: int, item_id: str, db: Session = Depends(get_db)):
-    item = db.query(CartItem).filter(
+    item = db.query(CCartItem).filter(
         CartItem.user_id == user_id,
         CartItem.item_id == item_id
     ).first()
