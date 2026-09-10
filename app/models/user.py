@@ -11,5 +11,8 @@ class User(Base):
     full_name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # REMOVE subscriptions relationship
-    # REMOVE cart_items relationship (already removed)
+    # REMOVE this line:
+    # subscriptions = relationship("Subscription", back_populates="user")
+
+    # REMOVE this line too (already done earlier):
+    # cart_items = relationship("CartItem", back_populates="user")
