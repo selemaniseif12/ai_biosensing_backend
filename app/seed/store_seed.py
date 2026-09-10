@@ -3,7 +3,7 @@
 from sqlalchemy.orm import Session
 from app.models.store_product import StoreProduct
 
-# Your static product list
+# Combined product list (your original + new verified items)
 PRODUCTS = [
     {
         "item_id": "consulting_fixed",
