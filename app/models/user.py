@@ -1,5 +1,4 @@
 from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
 
@@ -12,8 +11,5 @@ class User(Base):
     full_name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # Subscriptions relationship
-    subscriptions = relationship("Subscription", back_populates="user")
-
-    # Cart items relationship
-    cart_items = relationship("CartItem", back_populates="user")
+    # Remove cart_items relationship
+    # Remove subscriptions relationship if Subscription has no FK
