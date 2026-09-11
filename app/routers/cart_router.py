@@ -4,8 +4,6 @@ from pydantic import BaseModel
 
 from app.database import get_db
 from app.models.cart_item import CartItem
-from app.models.store_product import StoreProduct
-
 router = APIRouter(prefix="/store/cart", tags=["Cart"])
 
 class CartAddRequest(BaseModel):

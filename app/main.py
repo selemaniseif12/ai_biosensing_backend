@@ -11,9 +11,6 @@ from contextlib import asynccontextmanager
 from app.core.logging_config import LOGGING_CONFIG
 from app.database import Base, engine, SessionLocal, init_db
 
-# Seeders
-from app.seed.store_seed import seed_store_products
-
 # Models (needed for init_db)
 from app.models.students import Student
 from app.models.team_model import Team
@@ -23,7 +20,6 @@ from app.models.course_module import CourseModule
 from app.models.course_content import CourseContent
 from app.models.enrollment import Enrollment
 from app.models.activity import Activity
-from app.models.store_product import StoreProduct
 from app.models.cart_item import CartItem
 from app.models.receipt import Receipt
 from app.models.document import Document
@@ -109,9 +105,7 @@ async def startup_event():
     # Removed run_initial_load(db) — this was wiping cart_item rows.
     # Removed any destructive reseeding logic.
     db = SessionLocal()
-    seed_store_products(db)
-    db.close()
-
+   
 # Static files
 os.makedirs("static/slides", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")

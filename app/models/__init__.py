@@ -38,7 +38,6 @@ from .service_token_model import ServiceToken
 
 # ❌ REMOVE token_model — duplicate table definition
 
-from .store_product import StoreProduct
 from .students import Student
 from .subscription import Subscription
 from .team_model import Team
