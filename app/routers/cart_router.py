@@ -17,37 +17,51 @@ class CartAddRequest(BaseModel):
 # ---------------------------
 @router.get("")
 def get_cart(user_id: int, db: Session = Depends(get_db)):
-    return db.query(CartItem).filter(CartItem.user_id == user_id).all()
+    return (
+        db.query(CartItem)
+        .filter(CartItem.user_id == user_id)
+        .all()
+    )
 
 
 # ---------------------------
-# ADD ITEM TO CART
+# ADD ITEM TO CART (FIX 1 APPLIED)
 # ---------------------------
 @router.post("/add")
 def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get_db)):
-    product = db.query(StoreProduct).filter(StoreProduct.item_id == payload.item_id).first()
+    # Check if product exists
+    product = (
+        db.query(StoreProduct)
+        .filter(StoreProduct.item_id == payload.item_id)
+        .first()
+    )
 
     if not product:
         raise HTTPException(status_code=404, detail="Store item not found")
 
-    # ⭐ FIX: If item already exists, increase quantity instead of inserting duplicate
-    existing = db.query(CartItem).filter(
-        CartItem.user_id == user_id,
-        CartItem.item_id == payload.item_id
-    ).first()
+    # ⭐ FIX 1: Prevent duplicates — increment quantity instead
+    existing = (
+        db.query(CartItem)
+        .filter(
+            CartItem.user_id == user_id,
+            CartItem.item_id == payload.item_id
+        )
+        .first()
+    )
 
     if existing:
         existing.quantity += 1
         db.commit()
         db.refresh(existing)
+
         return {
             "message": "Quantity updated",
             "item": {
                 "item_id": existing.item_id,
                 "item_name": existing.item_name,
                 "quantity": existing.quantity,
-                "price_usd": existing.price_usd
-            }
+                "price_usd": existing.price_usd,
+            },
         }
 
     # Create new cart item
@@ -56,7 +70,7 @@ def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get
         item_id=product.item_id,
         item_name=product.name,
         quantity=1,
-        price_usd=product.price_usd
+        price_usd=product.price_usd,
     )
 
     db.add(cart_item)
@@ -69,8 +83,8 @@ def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get
             "item_id": cart_item.item_id,
             "item_name": cart_item.item_name,
             "quantity": cart_item.quantity,
-            "price_usd": cart_item.price_usd
-        }
+            "price_usd": cart_item.price_usd,
+        },
     }
 
 
@@ -79,10 +93,14 @@ def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get
 # ---------------------------
 @router.delete("/delete")
 def delete_cart_item(user_id: int, item_id: str, db: Session = Depends(get_db)):
-    item = db.query(CartItem).filter(
-        CartItem.user_id == user_id,
-        CartItem.item_id == item_id
-    ).first()
+    item = (
+        db.query(CartItem)
+        .filter(
+            CartItem.user_id == user_id,
+            CartItem.item_id == item_id
+        )
+        .first()
+    )
 
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
