@@ -6,7 +6,7 @@ from app.database import get_db
 from app.models.cart_item import CartItem
 from app.models.products import Product
 
-# MAIN ROUTER — now matches /store/cart/*
+# MAIN ROUTER — matches /store/cart/*
 router = APIRouter(prefix="/store/cart", tags=["Cart"])
 
 
@@ -114,21 +114,3 @@ def delete_cart_item(user_id: int, item_id: str, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Item deleted"}
-
-
-# ---------------------------
-# ALIAS ROUTES — now match /store/cart/*
-# ---------------------------
-alias_router = APIRouter(prefix="/store", tags=["Cart Alias"])
-
-@alias_router.post("/cart/add")
-def alias_add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get_db)):
-    return add_to_cart(user_id=user_id, payload=payload, db=db)
-
-@alias_router.get("/cart")
-def alias_get_cart(user_id: int, db: Session = Depends(get_db)):
-    return get_cart(user_id=user_id, db=db)
-
-@alias_router.delete("/cart/delete")
-def alias_delete_cart_item(user_id: int, item_id: str, db: Session = Depends(get_db)):
-    return delete_cart_item(user_id=user_id, item_id=item_id, db=db)
