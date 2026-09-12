@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from app.database import get_db
 from app.models.cart_item import CartItem
+from app.models.products import Product
 router = APIRouter(prefix="/store/cart", tags=["Cart"])
 
 class CartAddRequest(BaseModel):
@@ -29,8 +30,8 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
 def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get_db)):
     # Check if product exists
     product = (
-        db.query(StoreProduct)
-        .filter(StoreProduct.item_id == payload.item_id)
+        db.query(Product)
+        .filter(Product.item_id == payload.item_id)
         .first()
     )
 
