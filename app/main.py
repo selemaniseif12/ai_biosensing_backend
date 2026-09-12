@@ -28,7 +28,7 @@ from app.models.token_model import TokenModel
 from app.models.service_model import Service
 from app.models.user import User
 
-# Routers
+# Routers (non‑ML)
 from app.routers.home_router import router as home_router
 from app.profile_router import router as profile_router
 
@@ -80,7 +80,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS
+# ⭐ CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -95,7 +95,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Startup
+# ⭐ Startup — CLEANED
 @app.on_event("startup")
 async def startup_event():
     logging.config.dictConfig(LOGGING_CONFIG)
@@ -129,9 +129,9 @@ app.include_router(students_router, tags=["Students"])
 
 app.include_router(virus_list_router, tags=["Virus List"])
 
-# ⭐ Correct Store + Cart + Checkout Routers
+# ⭐ FIXED STORE + CART + CHECKOUT ROUTERS
 app.include_router(store_router, tags=["Store"])
-app.include_router(cart_router, tags=["Cart"])   # FIXED — only once
+app.include_router(cart_router)  # FIXED — only once, no tag override
 app.include_router(checkout_router, tags=["Checkout"])
 
 app.include_router(payment_webhook_router)
