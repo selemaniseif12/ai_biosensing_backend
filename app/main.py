@@ -28,7 +28,7 @@ from app.models.token_model import TokenModel
 from app.models.service_model import Service
 from app.models.user import User
 
-# Routers (non‑ML)
+# Routers
 from app.routers.home_router import router as home_router
 from app.profile_router import router as profile_router
 
@@ -80,7 +80,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# ⭐ CORS Middleware
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -95,17 +95,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ⭐ Startup — CLEANED
+# Startup
 @app.on_event("startup")
 async def startup_event():
     logging.config.dictConfig(LOGGING_CONFIG)
     init_db()
-
-    # ⭐ IMPORTANT:
-    # Removed run_initial_load(db) — this was wiping cart_item rows.
-    # Removed any destructive reseeding logic.
     db = SessionLocal()
-   
+
 # Static files
 os.makedirs("static/slides", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -133,11 +129,10 @@ app.include_router(students_router, tags=["Students"])
 
 app.include_router(virus_list_router, tags=["Virus List"])
 
-# ⭐ RESTORED STORE + CART + CHECKOUT ROUTERS
+# ⭐ Correct Store + Cart + Checkout Routers
 app.include_router(store_router, tags=["Store"])
-app.include_router(cart_router, tags=["Cart"])
-app.include_router(cart_router)
-app.include_router(checkout_router)
+app.include_router(cart_router, tags=["Cart"])   # FIXED — only once
+app.include_router(checkout_router, tags=["Checkout"])
 
 app.include_router(payment_webhook_router)
 
