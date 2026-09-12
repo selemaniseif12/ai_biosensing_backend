@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.models.cart_item import CartItem
 from app.models.products import Product
+
 router = APIRouter(prefix="/cart", tags=["Cart"])
 
 
@@ -25,11 +26,11 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
 
 
 # ---------------------------
-# ADD ITEM TO CART (FIX 1 APPLIED)
+# ADD ITEM TO CART (UPDATED WITH product_id)
 # ---------------------------
 @router.post("/add")
 def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get_db)):
-    # Check if product exists
+    # Check if product exists using string item_id
     product = (
         db.query(Product)
         .filter(Product.item_id == payload.item_id)
@@ -39,7 +40,7 @@ def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get
     if not product:
         raise HTTPException(status_code=404, detail="Store item not found")
 
-    # ⭐ FIX 1: Prevent duplicates — increment quantity instead
+    # Check if item already exists in cart
     existing = (
         db.query(CartItem)
         .filter(
@@ -61,13 +62,15 @@ def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get
                 "item_name": existing.item_name,
                 "quantity": existing.quantity,
                 "price_usd": existing.price_usd,
+                "product_id": existing.product_id,
             },
         }
 
-    # Create new cart item
+    # Create new cart item — NOW WITH product_id
     cart_item = CartItem(
         user_id=user_id,
-        item_id=product.item_id,
+        item_id=product.item_id,      # string code
+        product_id=product.id,        # numeric product ID (1–11)
         item_name=product.name,
         quantity=1,
         price_usd=product.price_usd,
@@ -84,6 +87,7 @@ def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get
             "item_name": cart_item.item_name,
             "quantity": cart_item.quantity,
             "price_usd": cart_item.price_usd,
+            "product_id": cart_item.product_id,
         },
     }
 
@@ -94,7 +98,7 @@ def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get
 @router.delete("/delete")
 def delete_cart_item(user_id: int, item_id: str, db: Session = Depends(get_db)):
     item = (
-        db.query(CartItem)
+        db.query(CCartItem)
         .filter(
             CartItem.user_id == user_id,
             CartItem.item_id == item_id
