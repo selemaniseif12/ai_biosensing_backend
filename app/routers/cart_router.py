@@ -6,7 +6,8 @@ from app.database import get_db
 from app.models.cart_item import CartItem
 from app.models.products import Product
 
-router = APIRouter(prefix="/cart", tags=["Cart"])
+# MAIN ROUTER — now matches /store/cart/*
+router = APIRouter(prefix="/store/cart", tags=["Cart"])
 
 
 class CartAddRequest(BaseModel):
@@ -26,11 +27,11 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
 
 
 # ---------------------------
-# ADD ITEM TO CART (UPDATED WITH product_id)
+# ADD ITEM TO CART (with product_id fix)
 # ---------------------------
 @router.post("/add")
 def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get_db)):
-    # Check if product exists using string item_id
+    # Look up product using string item_id
     product = (
         db.query(Product)
         .filter(Product.item_id == payload.item_id)
@@ -98,7 +99,7 @@ def add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get
 @router.delete("/delete")
 def delete_cart_item(user_id: int, item_id: str, db: Session = Depends(get_db)):
     item = (
-        db.query(CCartItem)
+        db.query(CartItem)
         .filter(
             CartItem.user_id == user_id,
             CartItem.item_id == item_id
@@ -116,9 +117,9 @@ def delete_cart_item(user_id: int, item_id: str, db: Session = Depends(get_db)):
 
 
 # ---------------------------
-# ALIAS ROUTES
+# ALIAS ROUTES — now match /store/cart/*
 # ---------------------------
-alias_router = APIRouter(tags=["Cart Alias"])
+alias_router = APIRouter(prefix="/store", tags=["Cart Alias"])
 
 @alias_router.post("/cart/add")
 def alias_add_to_cart(user_id: int, payload: CartAddRequest, db: Session = Depends(get_db)):
